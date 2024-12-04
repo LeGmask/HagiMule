@@ -12,17 +12,16 @@ import java.util.Map;
 import java.util.Set;
 
 import n7.HagiMule.Shared.FileInfo;
-import n7.HagiMule.Shared.FileInfoImpl;
 import n7.HagiMule.Shared.Peer;
 
 public class DiaryImpl extends UnicastRemoteObject implements Diary {
-	private Map<String, FileInfo> files; 
+    private Map<String, FileInfo> files;
     private Map<Peer, Set<String>> peers;
 
-	public DiaryImpl() throws java.rmi.RemoteException {
+    public DiaryImpl() throws java.rmi.RemoteException {
         files = new HashMap<String, FileInfo>();
         peers = new HashMap<Peer, Set<String>>();
-	}
+    }
 
     @Override
     public FileInfo RequestFile(String hash) throws RemoteException {
@@ -42,7 +41,7 @@ public class DiaryImpl extends UnicastRemoteObject implements Diary {
     @Override
     public FileInfo[] SearchFile(String nom) throws RemoteException {
         Set<FileInfo> results = new HashSet<FileInfo>();
-        for(FileInfo f : this.files.values()) {
+        for (FileInfo f : this.files.values()) {
             if (f.getNom().contains(nom)) {
                 results.add(f);
             }
@@ -54,8 +53,8 @@ public class DiaryImpl extends UnicastRemoteObject implements Diary {
     @Override
     public Peer[] getPeers(String hash) throws RemoteException {
         Set<Peer> results = new HashSet<Peer>();
-        for(Peer p : this.peers.keySet()) {
-            if(this.peers.get(p).contains(hash)) {
+        for (Peer p : this.peers.keySet()) {
+            if (this.peers.get(p).contains(hash)) {
                 results.add(p);
             }
         }
