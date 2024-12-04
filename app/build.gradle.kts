@@ -34,10 +34,17 @@ java {
 
 application {
     // Define the main class for the application.
-    mainClass = "n7.HagiMule.App"
+    mainClass = "n7.HagiMule.Client.Client"
 }
 
 tasks.named<Test>("test") {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
+}
+
+tasks.register<JavaExec>("diary") {
+    group = "application" // Optional: Organize the task under the "application" group
+    description = "Runs the n7.HagiMule.Diary.Diary class."
+    mainClass.set("n7.HagiMule.Diary.DiaryImpl") // Use `mainClass.set` for Kotlin DSL
+    classpath = sourceSets["main"].runtimeClasspath // Ensure the classpath is set correctly
 }
