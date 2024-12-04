@@ -9,6 +9,8 @@ public interface FileInfo extends Serializable {
     public String getNom();
 
     public String getHash();
+
+    public int getFragmentSize();
 }
 
 

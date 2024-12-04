@@ -4,11 +4,13 @@ public class FileInfoImpl implements FileInfo {
 	private String nom;
 	private int taille;
 	private String hash;
+    private int fragmentSize;
 
-    public FileInfoImpl(String nom, int taille, String hash) {
+    public FileInfoImpl(String nom, int taille, String hash, int fragmentSize) {
         this.nom = nom;
 		this.taille = taille;
 		this.hash = hash;
+        this.fragmentSize = fragmentSize;
     }
 
     @Override
@@ -25,4 +27,9 @@ public class FileInfoImpl implements FileInfo {
     public String getHash() {
         return hash;
     }   
+
+    @Override
+    public int getFragmentSize() {
+        return this.fragmentSize;
+    }
 }
