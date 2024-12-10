@@ -70,8 +70,9 @@ public class DownloaderImpl extends Thread implements Downloader {
                     file.writeFragment(fragNb, data);
                     io = io + System.currentTimeMillis() - start;
                     System.out.println("Downloader : IO : " + io + " | NET : " + net + " | REQ : " + request);
-
                 }
+
+                s.close();
             } catch (IOException e) {
                 e.printStackTrace();
             } catch (ClassNotFoundException e) {
@@ -91,6 +92,7 @@ public class DownloaderImpl extends Thread implements Downloader {
     public void downloadFile(FileInfo info, String savingPath) {
         FileImpl fichier = new FileImpl(info, savingPath);
         long nbFrag = FileInfoImpl.getFragmentNumber(info);
+        
         System.out.println("Téléchargement de " + nbFrag + " fragments");
         for(int i=0;i<nbFrag;i++) {
             queue.add(i);
