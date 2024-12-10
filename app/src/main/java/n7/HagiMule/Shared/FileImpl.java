@@ -39,10 +39,9 @@ public class FileImpl implements File {
     }
 
     public byte[] readFragment(int fragment) throws IOException {
-        long fragSize = fileInfo.getFragmentSize();
-        long start = fragSize * fragment;
-        long end = Math.min(fileInfo.getTaille(), (fragment+1)*fragSize);
-        long taille = end - start;
+        long start = fileInfo.getFragmentSize() * fragment;
+        long size = FileInfoImpl.getTailleOfFrag(fileInfo, fragment);
+        long taille = start - size;
 
         ByteBuffer buffer = ByteBuffer.allocate((int)taille);
         // seek le fichier au début du fragment
