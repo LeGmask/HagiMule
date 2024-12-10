@@ -2,11 +2,11 @@ package n7.HagiMule.Shared;
 
 public class FileInfoImpl implements FileInfo {
 	private String nom;
-	private int taille;
+	private long taille;
 	private String hash;
-    private int fragmentSize;
+    private long fragmentSize;
 
-    public FileInfoImpl(String nom, int taille, String hash, int fragmentSize) {
+    public FileInfoImpl(String nom, long taille, String hash, long fragmentSize) {
         this.nom = nom;
 		this.taille = taille;
 		this.hash = hash;
@@ -14,7 +14,7 @@ public class FileInfoImpl implements FileInfo {
     }
 
     @Override
-    public int getTaille() {
+    public long getTaille() {
         return taille;
     }
 
@@ -29,7 +29,18 @@ public class FileInfoImpl implements FileInfo {
     }   
 
     @Override
-    public int getFragmentSize() {
+    public long getFragmentSize() {
         return this.fragmentSize;
+    }
+
+
+    public static int getFragmentNumber(FileInfo info) {
+        long a = info.getTaille() / info.getFragmentSize() + (info.getTaille() % info.getFragmentSize() == 0 ? 0 : 1);
+        return (int)a;
+    }
+
+    public static int getTailleOfFrag(FileInfo info, int number) {
+        long a = number < getFragmentNumber(info) ? info.getFragmentSize() : (info.getTaille() % info.getFragmentSize());
+        return (int)a;
     }
 }

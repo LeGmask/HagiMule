@@ -4,13 +4,13 @@ import java.io.Serializable;
 
 public interface FileInfo extends Serializable {
     
-    public int getTaille();
+    public long getTaille();
 
     public String getNom();
 
     public String getHash();
 
-    public int getFragmentSize();
+    public long getFragmentSize();
 }
 
 

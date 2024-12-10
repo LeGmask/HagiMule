@@ -16,7 +16,7 @@ public class Client {
     System.out.println("Usage : java Client <diary address> <diary port>");
   }
 
-  public static void main(String[] args) {
+  public static void main(String[] args) throws IOException {
     if (args.length < 2) {
       printHelp();
       System.exit(1);
@@ -29,7 +29,9 @@ public class Client {
       // launching the Daemon
       DaemonImpl daemon = new DaemonImpl(index);
       daemon.start();
-      daemon.addFichier(new FileInfoImpl("bonjour", 156, "ohfuzefzf", 10));
+
+      DownloaderImpl downloader = new DownloaderImpl(index);
+      downloader.start();
 
       // adding a shutdown hook to unregister the Daemon and free the port
       Runtime.getRuntime().addShutdownHook(new Thread() {
@@ -43,7 +45,7 @@ public class Client {
       });
 
       // Start the TUI
-      Tui tui = new Tui(index, daemon);
+      Tui tui = new Tui(index, daemon, downloader);
     } catch (MalformedURLException e) {
       System.out.println("The RMI registry is incorrect.");
       e.printStackTrace();

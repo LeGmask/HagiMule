@@ -24,10 +24,12 @@ import n7.HagiMule.Shared.FileInfoImpl;
 public class Tui {
 	private Daemon daemon;
 	private Diary index;
+	private Downloader downloader;
 
-	public Tui(Diary index, Daemon daemon) throws IOException {
+	public Tui(Diary index, Daemon daemon, Downloader downloader) throws IOException {
 		this.index = index;
 		this.daemon = daemon;
+		this.downloader = downloader;
 
 		this.initializeTui();
 	}
@@ -52,8 +54,7 @@ public class Tui {
 						.setActionLabel("Open")
 						.build()
 						.showDialog(textGUI);
-				daemon.addFichier(new FileInfoImpl(input.getName(), (int) input.length(), "" + Objects.hash(input),
-						(int) input.length()));
+				daemon.addFichier(input.getPath());
 			}
 		}));
 
@@ -69,6 +70,7 @@ public class Tui {
 							public void run() {
 								System.out.println("Downloading " + fileInfo.getNom());
 								// TODO: download the file
+								downloader.downloadFile(fileInfo, "downloaded.png");
 								// close the window
 								textGUI.removeWindow(window);
 							}

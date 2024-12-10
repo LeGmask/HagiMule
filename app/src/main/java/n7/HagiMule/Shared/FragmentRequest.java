@@ -1,6 +1,8 @@
 package n7.HagiMule.Shared;
 
-public class FragmentRequest {
+import java.io.Serializable;
+
+public class FragmentRequest implements Serializable {
 	public final String fileHash;
 	public final int fragmentNumber;
 

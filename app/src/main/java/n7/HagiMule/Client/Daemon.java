@@ -4,6 +4,6 @@ import n7.HagiMule.Shared.FileInfo;
 
 public interface Daemon extends Runnable {
 
-    public void addFichier(FileInfo fileinfo);
+    public void addFichier(String path);
 
 }

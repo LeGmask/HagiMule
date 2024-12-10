@@ -39,12 +39,12 @@ public class FileImpl implements File {
     }
 
     public byte[] readFragment(int fragment) throws IOException {
-        int fragSize = fileInfo.getFragmentSize();
-        int start = fragSize * fragment;
-        int end = Math.min(fileInfo.getTaille(), (fragment+1)*fragSize);
-        int taille = end - start;
+        long fragSize = fileInfo.getFragmentSize();
+        long start = fragSize * fragment;
+        long end = Math.min(fileInfo.getTaille(), (fragment+1)*fragSize);
+        long taille = end - start;
 
-        ByteBuffer buffer = ByteBuffer.allocate(taille);
+        ByteBuffer buffer = ByteBuffer.allocate((int)taille);
         // seek le fichier au début du fragment
         this.channel.position(start);
         do {
@@ -56,7 +56,7 @@ public class FileImpl implements File {
 
     public void writeFragment(int fragment, byte[] data) throws IOException {
         
-        int start = getFileInfo().getFragmentSize() * fragment;
+        long start = getFileInfo().getFragmentSize() * (long)fragment;
         ByteBuffer buff = ByteBuffer.wrap(data);
         this.channel.position(start);
         do {

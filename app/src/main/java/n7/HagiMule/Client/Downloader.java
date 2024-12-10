@@ -1,7 +1,11 @@
 package n7.HagiMule.Client;
 
-public interface Download {
+import n7.HagiMule.Shared.FileInfo;
+
+public interface Downloader {
     
+    public void downloadFile(FileInfo info, String savingPath);
+
     public int getProgress();
 
     public void start();
@@ -9,5 +13,6 @@ public interface Download {
     public void pause();
 
     public void resume();
+
 
 }
