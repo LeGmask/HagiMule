@@ -36,19 +36,20 @@ public class DiaryImpl extends UnicastRemoteObject implements Diary {
     @Override
     public void RegisterFile(FileInfo file, Peer peer) throws RemoteException {
         System.out.println("Enregistrement du fichier dans l'Index : " + file.getNom() + " " + file.getHash());
-        
+
         // create the file if needed
         this.files.putIfAbsent(file.getHash(), file);
 
         try {
             String remoteIP = super.getClientHost();
             Peer nPeer = new PeerImpl((Inet4Address) Inet4Address.getByName(remoteIP), peer.getPort());
-            
+
             // update peers
             this.peers.putIfAbsent(nPeer, new HashSet<String>());
             this.peers.get(nPeer).add(file.getHash());
         } catch (ServerNotActiveException e) {
-            System.out.println("RegisterFile not called from a RMI Client but locally. \nThis behaviour is not supported.");
+            System.out.println(
+                    "RegisterFile not called from a RMI Client but locally. \nThis behaviour is not supported.");
         } catch (UnknownHostException e) {
             System.out.println("Hôte distant inconnu");
         }
@@ -80,7 +81,6 @@ public class DiaryImpl extends UnicastRemoteObject implements Diary {
         return results.toArray(new Peer[results.size()]);
     }
 
-
     @Override
     public void UnregisterPeer(Peer peer) {
         System.out.println("Désenregistrement du pair : " + peer);
@@ -90,12 +90,12 @@ public class DiaryImpl extends UnicastRemoteObject implements Diary {
             this.peers.remove(nPeer);
 
         } catch (ServerNotActiveException e) {
-            System.out.println("RegisterFile not called from a RMI Client but locally. \nThis behaviour is not supported.");
+            System.out.println(
+                    "RegisterFile not called from a RMI Client but locally. \nThis behaviour is not supported.");
         } catch (UnknownHostException e) {
             System.out.println("Hôte distant inconnu");
         }
     }
-
 
     public static void main(String args[]) throws RemoteException, MalformedURLException, AlreadyBoundException {
         LocateRegistry.createRegistry(4000);

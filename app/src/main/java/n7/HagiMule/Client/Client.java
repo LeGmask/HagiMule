@@ -31,7 +31,6 @@ public class Client {
       daemon.start();
       daemon.addFichier(new FileInfoImpl("bonjour", 156, "ohfuzefzf", 10));
 
-
       // adding a shutdown hook to unregister the Daemon and free the port
       Runtime.getRuntime().addShutdownHook(new Thread() {
         public void run() {
@@ -42,6 +41,9 @@ public class Client {
           }
         }
       });
+
+      // Start the TUI
+      Tui tui = new Tui(index, daemon);
     } catch (MalformedURLException e) {
       System.out.println("The RMI registry is incorrect.");
       e.printStackTrace();
@@ -55,6 +57,6 @@ public class Client {
       System.out.println("Connexion refusée. Est-ce que le serveur est allumé et joingable ?");
     } catch (Exception e) {
       e.printStackTrace();
-    } 
+    }
   }
 }
