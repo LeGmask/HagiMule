@@ -1,12 +1,8 @@
 package n7.HagiMule.Shared;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
 import java.nio.channels.FileChannel;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
@@ -15,7 +11,6 @@ public class FileImpl implements File {
     
     private FileInfo fileInfo;
     private Path filePath;
-    private int downloadedSize;
 
     private FileChannel channel;
 
@@ -43,7 +38,7 @@ public class FileImpl implements File {
         throw new UnsupportedOperationException("Unimplemented method 'fragmentIsAvailable'");
     }
 
-    public ByteBuffer getFragment(int fragment) throws IOException {
+    public byte[] readFragment(int fragment) throws IOException {
         int fragSize = fileInfo.getFragmentSize();
         int start = fragSize * fragment;
         int end = Math.min(fileInfo.getTaille(), (fragment+1)*fragSize);
@@ -56,16 +51,17 @@ public class FileImpl implements File {
             this.channel.read(buffer);
         } while (buffer.hasRemaining());
 
-        return buffer;
+        return buffer.array();
     }
 
-    public void setFragment(int fragment, ByteBuffer data) throws IOException {
+    public void writeFragment(int fragment, byte[] data) throws IOException {
         
         int start = getFileInfo().getFragmentSize() * fragment;
+        ByteBuffer buff = ByteBuffer.wrap(data);
         this.channel.position(start);
         do {
-            this.channel.write(data);
-        } while (data.hasRemaining());
+            this.channel.write(buff);
+        } while (buff.hasRemaining());
 
     }
 
