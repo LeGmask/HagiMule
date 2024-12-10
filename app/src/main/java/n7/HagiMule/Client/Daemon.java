@@ -1,10 +1,9 @@
 package n7.HagiMule.Client;
 
-import java.rmi.Remote;
-import java.rmi.RemoteException;
+import n7.HagiMule.Shared.FileInfo;
 
-public interface Daemon extends Remote {
+public interface Daemon extends Runnable {
 
-    public byte[] requestFragment(String hash, int frag) throws RemoteException;
+    public void addFichier(FileInfo fileinfo);
 
 }

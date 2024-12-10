@@ -3,7 +3,7 @@ package n7.HagiMule.Shared;
 import java.io.Serializable;
 import java.net.InetAddress;
 
-public interface Peer extends Serializable implements Comparable<Peer> {
+public interface Peer extends Serializable {
 	/**
 	 * Getthe peer's IP address.
 	 * @return the peer's IP address

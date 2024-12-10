@@ -43,4 +43,10 @@ public interface Diary extends Remote {
 	 * @return the list of peers
 	 */
 	public Peer[] getPeers(String hash) throws RemoteException;
+
+	/**
+	 * Removes a peer from the diary. Also removes all its exclusive files
+	 * @param peer the peer to be removed
+	 */
+	public void UnregisterPeer(Peer peer) throws RemoteException;
 }
