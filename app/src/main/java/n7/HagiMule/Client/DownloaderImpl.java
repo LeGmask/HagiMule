@@ -23,15 +23,12 @@ import n7.HagiMule.Shared.FragmentRequest;
 import n7.HagiMule.Shared.Peer;
 
 public class DownloaderImpl extends Thread implements Downloader {
-    
 
     public static final int NBDLSIMUL = 5;
 
     private Diary diary;
     private ExecutorService executor;
     private ConcurrentLinkedQueue<Integer> queue;
-
-
 
     private class PeerConnexion implements Runnable {
 
@@ -50,7 +47,7 @@ public class DownloaderImpl extends Thread implements Downloader {
         public void run() {
             long request = 0;
             long net = 0;
-            long io =0;
+            long io = 0;
             long start = 0;
             try {
                 ObjectInputStream rois = new ObjectInputStream(s.getInputStream());
@@ -61,11 +58,11 @@ public class DownloaderImpl extends Thread implements Downloader {
                     start = System.currentTimeMillis();
                     roos.writeObject(new FragmentRequest(info.getHash(), fragNb));
                     request = request + System.currentTimeMillis() - start;
-                    
+
                     start = System.currentTimeMillis();
-                    byte[] data = (byte[])rois.readObject();
+                    byte[] data = (byte[]) rois.readObject();
                     net = net + System.currentTimeMillis() - start;
-                    
+
                     start = System.currentTimeMillis();
                     file.writeFragment(fragNb, data);
                     io = io + System.currentTimeMillis() - start;
@@ -92,14 +89,14 @@ public class DownloaderImpl extends Thread implements Downloader {
     public void downloadFile(FileInfo info, String savingPath) {
         FileImpl fichier = new FileImpl(info, savingPath);
         long nbFrag = FileInfoImpl.getFragmentNumber(info);
-        
+
         System.out.println("Téléchargement de " + nbFrag + " fragments");
-        for(int i=0;i<nbFrag;i++) {
+        for (int i = 0; i < nbFrag; i++) {
             queue.add(i);
         }
         try {
             Peer[] peers = diary.getPeers(info.getHash());
-            for(Peer p : peers) {
+            for (Peer p : peers) {
                 try {
                     PeerConnexion conn = new PeerConnexion(p, info, fichier);
                     executor.submit(conn);
@@ -108,7 +105,7 @@ public class DownloaderImpl extends Thread implements Downloader {
                 }
             }
             // TODO : change for active monitoring + résilience
-            Boolean done = executor.awaitTermination(10, TimeUnit.DAYS);
+            // Boolean done = executor.awaitTermination(10, TimeUnit.DAYS);
 
         } catch (RemoteException e) {
             System.out.println("Diary failed");
@@ -116,7 +113,7 @@ public class DownloaderImpl extends Thread implements Downloader {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-       
+
     }
 
     @Override
