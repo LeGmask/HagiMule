@@ -31,7 +31,7 @@ public class PeerImpl implements Peer {
 		if (o == null || getClass() != o.getClass())
 			return false;
 		Peer that = (Peer) o;
-		return ipAddress == that.getIpAddress() && port == that.getPort();
+		return ipAddress.equals(that.getIpAddress()) && port == that.getPort();
 	}
 
 
