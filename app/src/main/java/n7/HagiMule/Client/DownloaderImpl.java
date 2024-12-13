@@ -5,13 +5,9 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.rmi.RemoteException;
-import java.util.ArrayList;
-import java.util.Vector;
-import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import n7.HagiMule.Diary.Diary;
@@ -39,7 +35,7 @@ public class DownloaderImpl extends Thread implements Downloader {
         public PeerConnexion(Peer peer, FileInfo info, File fichier) throws IOException {
             System.out.println("Opening peer connexion");
             s = new Socket(peer.getIpAddress(), peer.getPort());
-            System.out.println("Connexion établie");
+            System.out.println("Connexion établie avec daemon " + peer.getIpAddress() + ":" + peer.getPort());
             this.info = info;
             this.file = fichier;
         }
@@ -55,10 +51,11 @@ public class DownloaderImpl extends Thread implements Downloader {
 
                 while (!queue.isEmpty()) {
                     int fragNb = queue.poll();
+                    System.out.println("Requesting fragment " + fragNb);
                     start = System.currentTimeMillis();
                     roos.writeObject(new FragmentRequest(info.getHash(), fragNb));
                     request = request + System.currentTimeMillis() - start;
-
+                    
                     start = System.currentTimeMillis();
                     byte[] data = (byte[]) rois.readObject();
                     net = net + System.currentTimeMillis() - start;
@@ -66,6 +63,7 @@ public class DownloaderImpl extends Thread implements Downloader {
                     start = System.currentTimeMillis();
                     file.writeFragment(fragNb, data);
                     io = io + System.currentTimeMillis() - start;
+                    
                     System.out.println("Downloader : IO : " + io + " | NET : " + net + " | REQ : " + request);
                 }
 
@@ -81,14 +79,17 @@ public class DownloaderImpl extends Thread implements Downloader {
 
     public DownloaderImpl(Diary diary) {
         this.diary = diary;
-        executor = Executors.newFixedThreadPool(NBDLSIMUL);
-        queue = new ConcurrentLinkedQueue<Integer>();
     }
 
     @Override
     public void downloadFile(FileInfo info, String savingPath) {
+        
         FileImpl fichier = new FileImpl(info, savingPath);
         long nbFrag = FileInfoImpl.getFragmentNumber(info);
+
+        executor = Executors.newFixedThreadPool(NBDLSIMUL);
+        queue = new ConcurrentLinkedQueue<Integer>();
+
 
         System.out.println("Téléchargement de " + nbFrag + " fragments");
         for (int i = 0; i < nbFrag; i++) {
@@ -96,6 +97,7 @@ public class DownloaderImpl extends Thread implements Downloader {
         }
         try {
             Peer[] peers = diary.getPeers(info.getHash());
+            System.out.println("Downloader : " + peers.length + " pair(s) trouvé(s)");
             for (Peer p : peers) {
                 try {
                     PeerConnexion conn = new PeerConnexion(p, info, fichier);
@@ -105,7 +107,16 @@ public class DownloaderImpl extends Thread implements Downloader {
                 }
             }
             // TODO : change for active monitoring + résilience
-            // Boolean done = executor.awaitTermination(10, TimeUnit.DAYS);
+
+            // STUB : Wait for the end of the download and exit properly
+            executor.shutdown();
+            try {
+            executor.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                System.out.println("Downloader : Téléchargement interrompu !");
+            }            
+            System.out.println("Downloader : Téléchargement terminé.");
+
 
         } catch (RemoteException e) {
             System.out.println("Diary failed");
