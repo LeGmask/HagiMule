@@ -110,8 +110,6 @@ public class DownloaderImpl extends Thread implements Downloader {
         } catch (RemoteException e) {
             System.out.println("Diary failed");
             e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
         }
 
     }
