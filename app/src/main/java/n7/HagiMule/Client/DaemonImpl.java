@@ -1,5 +1,7 @@
 package n7.HagiMule.Client;
 
+import java.io.BufferedOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
@@ -29,26 +31,25 @@ import n7.HagiMule.Shared.PeerImpl;
 public class DaemonImpl extends Thread implements Daemon {
 
     public static final int NBPEER = 10;
-    public static final int PORT = 56739;
-    public static final int DEFAULT_FRAGSIZE = 409600;
+    public static final int DEFAULT_FRAGSIZE = 500;
  
     private Diary index;
     private Map<String, File> files;
     private ExecutorService executor;
     private ServerSocket ss;
+    private int port;
 
     private class PeerConnexion implements Runnable {
 
         private Socket remote;
 
         public PeerConnexion(Socket s) {
-            System.out.println("Connection établie avec client " + s.getInetAddress().toString());
+            System.out.println("Connexion établie avec client " + s.getInetAddress().toString());
             remote = s;
         }
 
         @Override
         public void run() {
-            long iotime = 0;
             long sendingtime = 0;
             try {
                 InputStream ris = remote.getInputStream();
@@ -61,14 +62,21 @@ public class DaemonImpl extends Thread implements Daemon {
                     FragmentRequest request = (FragmentRequest)rois.readObject();
 
                     File fichier = files.get(request.fileHash);
-                    long start = System.currentTimeMillis();
-                    byte[] data = fichier.readFragment(request.fragmentNumber);
-                    iotime = iotime + System.currentTimeMillis()-start;
-                    start = System.currentTimeMillis();
-                    roos.writeObject(data);
-                    sendingtime = sendingtime + System.currentTimeMillis() - start;
-                    System.out.println("Daemon : IO : " + iotime + " | NET : " + sendingtime);
+                    if(fichier != null) {
+                        long start = System.currentTimeMillis();
+                        start = System.currentTimeMillis();
+                        roos.writeObject(fichier.readFragment(request.fragmentNumber));
+                        sendingtime = System.currentTimeMillis() - start;
+                        System.out.println("Daemon : frag time : " + sendingtime + "ms");
+                    } else {
+                        System.out.println("Le fichier demander n'est pas ouvert par le Daemon");
+                        break;
+                    }
+
                 }
+
+            } catch (EOFException e) {
+                System.out.println("Daemon Worker : pair déconnecté. TODO better handling");
             } catch (IOException e) {
                 e.printStackTrace();
             } catch (ClassCastException e) {
@@ -77,7 +85,14 @@ public class DaemonImpl extends Thread implements Daemon {
                 e.printStackTrace();
             }
 
+            try {
+                remote.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
         }
+
     }
 
 
@@ -85,7 +100,9 @@ public class DaemonImpl extends Thread implements Daemon {
         index = diary;
         files = new HashMap<String, File>();
         this.executor = Executors.newFixedThreadPool(NBPEER);
-        ss = new ServerSocket(PORT);
+        ss = new ServerSocket(0);
+        port = ss.getLocalPort();
+        System.out.println("Daemon : lancé sur le port " + port);
     }
 
     @Override 
@@ -105,7 +122,7 @@ public class DaemonImpl extends Thread implements Daemon {
     public void close() throws IOException {
         System.out.println("Closing Dameon...");
         // on se dé-enregistre du diary
-        index.UnregisterPeer(new PeerImpl(null, PORT));
+        index.UnregisterPeer(new PeerImpl(null, port));
         ss.close();
     }
 
@@ -118,7 +135,7 @@ public class DaemonImpl extends Thread implements Daemon {
             
             System.out.println("Enregistrement du fichier dans le Daemon : " + info.getNom());
             files.put(info.getHash(), new FileImpl(info, filepath));
-            Peer p = new PeerImpl(null, PORT);
+            Peer p = new PeerImpl(null, port);
             try {
                 index.RegisterFile(info, p);
             } catch (RemoteException e) {
