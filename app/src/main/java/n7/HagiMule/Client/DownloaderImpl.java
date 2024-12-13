@@ -1,9 +1,13 @@
 package n7.HagiMule.Client;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.net.Socket;
+import java.nio.ByteBuffer;
 import java.rmi.RemoteException;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
@@ -46,22 +50,38 @@ public class DownloaderImpl extends Thread implements Downloader {
             long io = 0;
             long start = 0;
             try {
-                ObjectInputStream rois = new ObjectInputStream(s.getInputStream());
-                ObjectOutputStream roos = new ObjectOutputStream(s.getOutputStream());
-
+                InputStream ris = s.getInputStream();
+                OutputStream ros = s.getOutputStream();
+                
+                BufferedInputStream rbis = new BufferedInputStream(ris);
+                ObjectOutputStream roos = new ObjectOutputStream(ros);
+                ByteBuffer buff = ByteBuffer.allocate((int)info.getFragmentSize());
+                
                 while (!queue.isEmpty()) {
+                    // récup numéro fragment à dl
                     int fragNb = queue.poll();
+
+                    // envoit requête au pair pour le fragment
                     System.out.println("Requesting fragment " + fragNb);
                     start = System.currentTimeMillis();
                     roos.writeObject(new FragmentRequest(info.getHash(), fragNb));
                     request = request + System.currentTimeMillis() - start;
                     
+                    buff.position(0);                    
+                    
+                    // récupération du fragment demandé
+                    System.out.println("Downloading fragment " + fragNb);
                     start = System.currentTimeMillis();
-                    byte[] data = (byte[]) rois.readObject();
+                    int target = FileInfoImpl.getTailleOfFrag(info, fragNb);
+                    byte[] data = rbis.readNBytes(target);
+                    buff.put(data);
                     net = net + System.currentTimeMillis() - start;
 
+
+                    // écriture sur disque du fragment reçu
+                    System.out.println("Writing fragment " + fragNb);
                     start = System.currentTimeMillis();
-                    file.writeFragment(fragNb, data);
+                    file.writeFragment(fragNb, buff);
                     io = io + System.currentTimeMillis() - start;
                     
                     System.out.println("Downloader : IO : " + io + " | NET : " + net + " | REQ : " + request);
@@ -70,9 +90,12 @@ public class DownloaderImpl extends Thread implements Downloader {
                 s.close();
             } catch (IOException e) {
                 e.printStackTrace();
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
-            }
+            } 
+            // catch (ClassNotFoundException e) {
+            //     e.printStackTrace();
+            // }
+
+            System.out.println("Fin Downloader Worker Thread");
 
         }
     }
@@ -111,7 +134,7 @@ public class DownloaderImpl extends Thread implements Downloader {
             // STUB : Wait for the end of the download and exit properly
             executor.shutdown();
             try {
-            executor.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
+                executor.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
                 System.out.println("Downloader : Téléchargement interrompu !");
             }            

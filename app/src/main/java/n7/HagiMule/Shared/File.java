@@ -1,6 +1,7 @@
 package n7.HagiMule.Shared;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 public interface File {
     
@@ -8,9 +9,9 @@ public interface File {
 
     public Boolean fragmentIsAvailable(int fragment);
 
-    public byte[] readFragment(int fragment) throws IOException;
+    public ByteBuffer readFragment(int fragment) throws IOException;
 
-    public void writeFragment(int fragment, byte[] data) throws IOException;
+    public void writeFragment(int fragment, ByteBuffer buff) throws IOException;
 
 
 }

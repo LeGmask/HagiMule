@@ -31,7 +31,7 @@ import n7.HagiMule.Shared.PeerImpl;
 public class DaemonImpl extends Thread implements Daemon {
 
     public static final int NBPEER = 10;
-    public static final int DEFAULT_FRAGSIZE = 500;
+    public static final int DEFAULT_FRAGSIZE = 3;
  
     private Diary index;
     private Map<String, File> files;
@@ -55,7 +55,6 @@ public class DaemonImpl extends Thread implements Daemon {
                 InputStream ris = remote.getInputStream();
                 OutputStream ros = remote.getOutputStream();
 
-                ObjectOutputStream roos = new ObjectOutputStream(ros);
                 ObjectInputStream rois = new ObjectInputStream(ris);
 
                 while(true) {
@@ -65,7 +64,7 @@ public class DaemonImpl extends Thread implements Daemon {
                     if(fichier != null) {
                         long start = System.currentTimeMillis();
                         start = System.currentTimeMillis();
-                        roos.writeObject(fichier.readFragment(request.fragmentNumber));
+                        ros.write(fichier.readFragment(request.fragmentNumber).array()); // scary : bytebuffer->array
                         sendingtime = System.currentTimeMillis() - start;
                         System.out.println("Daemon : frag time : " + sendingtime + "ms");
                     } else {

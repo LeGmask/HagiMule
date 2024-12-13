@@ -40,27 +40,24 @@ public class FileImpl implements File {
         throw new UnsupportedOperationException("Unimplemented method 'fragmentIsAvailable'");
     }
 
-    public byte[] readFragment(int fragment) throws IOException {
-        this.mutex.lock();
-       
+    public ByteBuffer readFragment(int fragment) throws IOException {
         ByteBuffer buffer = ByteBuffer.allocate((int) FileInfoImpl.getTailleOfFrag(fileInfo, fragment));
-        // seek le fichier au début du fragment
-        this.channel.position(fileInfo.getFragmentSize() * fragment);
-        do {
-            this.channel.read(buffer);
-        } while (buffer.hasRemaining());
+        long start = getFileInfo().getFragmentSize() * (long)fragment;
+        
+        // section critique
+        this.mutex.lock();
+        this.channel.read(buffer, start);
         this.mutex.unlock();
-        return buffer.array();
+        
+        return buffer;
     }
 
-    public void writeFragment(int fragment, byte[] data) throws IOException {
-        this.mutex.lock();
+    public void writeFragment(int fragment, ByteBuffer data) throws IOException {
         long start = getFileInfo().getFragmentSize() * (long)fragment;
-        ByteBuffer buff = ByteBuffer.wrap(data);
-        this.channel.position(start);
-        do {
-            this.channel.write(buff);
-        } while (buff.hasRemaining());
+        
+        // section critique
+        this.mutex.lock();
+        this.channel.write(data, start);
         this.mutex.unlock();
     }
 
