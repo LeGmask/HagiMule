@@ -11,6 +11,8 @@ import java.rmi.server.ServerNotActiveException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -89,11 +91,19 @@ public class DiaryImpl extends UnicastRemoteObject implements Diary {
             System.out.println("Désenregistrement du pair : " + nPeer.getIpAddress());
             this.peers.remove(nPeer);
 
+            // using another list to save file and not remove them while iterating over the list of files
+            List<String> toDelete = new LinkedList<String>();
             for(String f : files.keySet()) {
-                if (this.getPeers(f).length == 0) {
-                    files.remove(f);
-                }
+                System.out.println(f);
+                if (getPeers(f).length == 0) {
+                    toDelete.add(f);
+                } 
             }
+            // remove orphaned files
+            for(String f : toDelete) {
+                files.remove(f);
+            }
+
 
         } catch (RemoteException e) {
             e.printStackTrace();
