@@ -83,13 +83,22 @@ public class DiaryImpl extends UnicastRemoteObject implements Diary {
 
     @Override
     public void UnregisterPeer(Peer peer) {
-        System.out.println("Désenregistrement du pair : " + peer);
         try {
             String remoteIP = super.getClientHost();
             Peer nPeer = new PeerImpl((Inet4Address) Inet4Address.getByName(remoteIP), peer.getPort());
+            System.out.println("Désenregistrement du pair : " + nPeer.getIpAddress());
             this.peers.remove(nPeer);
 
-        } catch (ServerNotActiveException e) {
+            for(String f : files.keySet()) {
+                if (this.getPeers(f).length == 0) {
+                    files.remove(f);
+                }
+            }
+
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        } 
+        catch (ServerNotActiveException e) {
             System.out.println(
                     "RegisterFile not called from a RMI Client but locally. \nThis behaviour is not supported.");
         } catch (UnknownHostException e) {
