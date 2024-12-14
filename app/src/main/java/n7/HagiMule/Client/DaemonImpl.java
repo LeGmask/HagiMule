@@ -1,11 +1,8 @@
 package n7.HagiMule.Client;
 
-import java.io.BufferedOutputStream;
+import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -24,14 +21,13 @@ import n7.HagiMule.Shared.File;
 import n7.HagiMule.Shared.FileImpl;
 import n7.HagiMule.Shared.FileInfo;
 import n7.HagiMule.Shared.FileInfoImpl;
-import n7.HagiMule.Shared.FragmentRequest;
 import n7.HagiMule.Shared.Peer;
 import n7.HagiMule.Shared.PeerImpl;
 
 public class DaemonImpl extends Thread implements Daemon {
 
     public static final int NBPEER = 10;
-    public static final int DEFAULT_FRAGSIZE = 500;
+    public static final int DEFAULT_FRAGSIZE = 40000000;
  
     private Diary index;
     private Map<String, File> files;
@@ -50,42 +46,32 @@ public class DaemonImpl extends Thread implements Daemon {
 
         @Override
         public void run() {
-            long sendingtime = 0;
             try {
-                InputStream ris = remote.getInputStream();
+                
                 OutputStream ros = remote.getOutputStream();
+                DataInputStream rdis = new DataInputStream(remote.getInputStream());
+                String fileHash = rdis.readUTF();
+                File fichier = files.get(fileHash);
 
-                ObjectOutputStream roos = new ObjectOutputStream(ros);
-                ObjectInputStream rois = new ObjectInputStream(ris);
-
-                while(true) {
-                    FragmentRequest request = (FragmentRequest)rois.readObject();
-
-                    File fichier = files.get(request.fileHash);
-                    if(fichier != null) {
+                if(fichier != null) {
+                    while(true) {
+                        int fragmentNumber = rdis.readInt();
                         long start = System.currentTimeMillis();
-                        start = System.currentTimeMillis();
-                        roos.writeObject(fichier.readFragment(request.fragmentNumber));
-                        sendingtime = System.currentTimeMillis() - start;
-                        System.out.println("Daemon : frag time : " + sendingtime + "ms");
-                    } else {
-                        System.out.println("Le fichier demander n'est pas ouvert par le Daemon");
-                        break;
-                    }
-
+                        ros.write(fichier.readFragment(fragmentNumber));
+                        System.out.println("Daemon : frag time : " + (System.currentTimeMillis() - start) + "ms");
+                    } 
+                } else {
+                    System.out.println("Le fichier demander n'est pas ouvert par le Daemon");
                 }
 
             } catch (EOFException e) {
                 System.out.println("Daemon Worker : pair déconnecté. TODO better handling");
             } catch (IOException e) {
                 e.printStackTrace();
-            } catch (ClassCastException e) {
-                e.printStackTrace();
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
             }
 
             try {
+                System.out.println("Daemon : fermeture connexion socket client");
                 remote.close();
             } catch (IOException e) {
                 e.printStackTrace();

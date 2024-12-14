@@ -1,6 +1,9 @@
 package n7.HagiMule.Client;
 
+import java.io.BufferedInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
@@ -15,7 +18,6 @@ import n7.HagiMule.Shared.File;
 import n7.HagiMule.Shared.FileImpl;
 import n7.HagiMule.Shared.FileInfo;
 import n7.HagiMule.Shared.FileInfoImpl;
-import n7.HagiMule.Shared.FragmentRequest;
 import n7.HagiMule.Shared.Peer;
 
 public class DownloaderImpl extends Thread implements Downloader {
@@ -41,39 +43,47 @@ public class DownloaderImpl extends Thread implements Downloader {
         }
 
         public void run() {
-            long request = 0;
             long net = 0;
             long io = 0;
             long start = 0;
             try {
-                ObjectInputStream rois = new ObjectInputStream(s.getInputStream());
-                ObjectOutputStream roos = new ObjectOutputStream(s.getOutputStream());
 
+                InputStream ris = s.getInputStream();
+                BufferedInputStream rbis = new BufferedInputStream(ris);
+                DataOutputStream rbos = new DataOutputStream(s.getOutputStream());
+                byte[] buff = new byte[(int)info.getFragmentSize()];
+
+                // send filehash to peer so it knows which file we are downloading
+                // only send it once for the whole transaction
+                rbos.writeUTF(info.getHash());
+                rbos.flush();
+                
                 while (!queue.isEmpty()) {
                     int fragNb = queue.poll();
                     System.out.println("Requesting fragment " + fragNb);
                     start = System.currentTimeMillis();
-                    roos.writeObject(new FragmentRequest(info.getHash(), fragNb));
-                    request = request + System.currentTimeMillis() - start;
+                    rbos.writeInt(fragNb);
+                    rbos.flush();
                     
-                    start = System.currentTimeMillis();
-                    byte[] data = (byte[]) rois.readObject();
+                    int target = FileInfoImpl.getTailleOfFrag(info, fragNb);
+                    int recv = 0;
+                    while (recv < target) {
+                        recv = recv + rbis.read(buff, recv, target - recv);   
+                    }
                     net = net + System.currentTimeMillis() - start;
 
                     start = System.currentTimeMillis();
-                    file.writeFragment(fragNb, data);
+                    System.out.println(fragNb + " - " + recv);
+                    file.writeFragment(fragNb, buff, recv);
                     io = io + System.currentTimeMillis() - start;
                     
-                    System.out.println("Downloader : IO : " + io + " | NET : " + net + " | REQ : " + request);
+                    System.out.println("Downloader : IO : " + io + " | NET : " + net);
                 }
 
                 s.close();
             } catch (IOException e) {
                 e.printStackTrace();
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
-            }
-
+            } 
         }
     }
 

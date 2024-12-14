@@ -41,26 +41,18 @@ public class FileImpl implements File {
     }
 
     public byte[] readFragment(int fragment) throws IOException {
-        this.mutex.lock();
-       
         ByteBuffer buffer = ByteBuffer.allocate((int) FileInfoImpl.getTailleOfFrag(fileInfo, fragment));
-        // seek le fichier au début du fragment
-        this.channel.position(fileInfo.getFragmentSize() * fragment);
-        do {
-            this.channel.read(buffer);
-        } while (buffer.hasRemaining());
+        this.mutex.lock();
+        this.channel.read(buffer, fileInfo.getFragmentSize() * fragment);
         this.mutex.unlock();
         return buffer.array();
     }
 
-    public void writeFragment(int fragment, byte[] data) throws IOException {
-        this.mutex.lock();
+    public void writeFragment(int fragment, byte[] data, int length) throws IOException {
         long start = getFileInfo().getFragmentSize() * (long)fragment;
-        ByteBuffer buff = ByteBuffer.wrap(data);
-        this.channel.position(start);
-        do {
-            this.channel.write(buff);
-        } while (buff.hasRemaining());
+        ByteBuffer buff = ByteBuffer.wrap(data).slice(0, length);
+        this.mutex.lock();
+        this.channel.write(buff, start);
         this.mutex.unlock();
     }
 
