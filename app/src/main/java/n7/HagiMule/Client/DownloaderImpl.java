@@ -4,9 +4,10 @@ import java.io.BufferedInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.rmi.RemoteException;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
@@ -33,10 +34,13 @@ public class DownloaderImpl extends Thread implements Downloader {
         private Socket s;
         private FileInfo info;
         private File file;
+        private int currentFrag;
 
         public PeerConnexion(Peer peer, FileInfo info, File fichier) throws IOException {
-            System.out.println("Opening peer connexion");
-            s = new Socket(peer.getIpAddress(), peer.getPort());
+            System.out.println("Ouverture connexion avec " + peer.getIpAddress());
+            s = new Socket();
+            s.connect(new InetSocketAddress(peer.getIpAddress(), peer.getPort()), 10 * 1000);
+            s.setSoTimeout(60 * 1000); // max read timeout (1 minute)
             System.out.println("Connexion établie avec daemon " + peer.getIpAddress() + ":" + peer.getPort());
             this.info = info;
             this.file = fichier;
@@ -51,39 +55,44 @@ public class DownloaderImpl extends Thread implements Downloader {
                 InputStream ris = s.getInputStream();
                 BufferedInputStream rbis = new BufferedInputStream(ris);
                 DataOutputStream rbos = new DataOutputStream(s.getOutputStream());
-                byte[] buff = new byte[(int)info.getFragmentSize()];
+                byte[] buff = new byte[(int) info.getFragmentSize()];
 
                 // send filehash to peer so it knows which file we are downloading
                 // only send it once for the whole transaction
                 rbos.writeUTF(info.getHash());
                 rbos.flush();
-                
+
                 while (!queue.isEmpty()) {
-                    int fragNb = queue.poll();
-                    System.out.println("Requesting fragment " + fragNb);
+                    currentFrag = queue.poll();
+                    System.out.println("Requesting fragment " + currentFrag);
                     start = System.currentTimeMillis();
-                    rbos.writeInt(fragNb);
+                    rbos.writeInt(currentFrag);
                     rbos.flush();
-                    
-                    int target = FileInfoImpl.getTailleOfFrag(info, fragNb);
+
+                    int target = FileInfoImpl.getTailleOfFrag(info, currentFrag);
                     int recv = 0;
                     while (recv < target) {
-                        recv = recv + rbis.read(buff, recv, target - recv);   
+                        recv = recv + rbis.read(buff, recv, target - recv);
                     }
                     net = net + System.currentTimeMillis() - start;
 
                     start = System.currentTimeMillis();
-                    System.out.println(fragNb + " - " + recv);
-                    file.writeFragment(fragNb, buff, recv);
+                    file.writeFragment(currentFrag, buff, recv);
                     io = io + System.currentTimeMillis() - start;
-                    
+
                     System.out.println("Downloader : IO : " + io + " | NET : " + net);
                 }
 
                 s.close();
+            } catch (SocketException | SocketTimeoutException e) {
+                System.out.println("Downloader : une erreur est survenue pour le fragment " + currentFrag + " : "
+                        + e.getLocalizedMessage());
+                // something went wrong while downloading fragment
+                // reading to the queue for ulterior retry
+                queue.add(currentFrag);
             } catch (IOException e) {
                 e.printStackTrace();
-            } 
+            }
         }
     }
 
@@ -93,13 +102,12 @@ public class DownloaderImpl extends Thread implements Downloader {
 
     @Override
     public void downloadFile(FileInfo info, String savingPath) {
-        
-        FileImpl fichier = new FileImpl(info, savingPath);
+
+        FileImpl fichier = new FileImpl(info, savingPath, true);
         long nbFrag = FileInfoImpl.getFragmentNumber(info);
 
         executor = Executors.newFixedThreadPool(NBDLSIMUL);
         queue = new ConcurrentLinkedQueue<Integer>();
-
 
         System.out.println("Téléchargement de " + nbFrag + " fragments");
         for (int i = 0; i < nbFrag; i++) {
@@ -112,6 +120,8 @@ public class DownloaderImpl extends Thread implements Downloader {
                 try {
                     PeerConnexion conn = new PeerConnexion(p, info, fichier);
                     executor.submit(conn);
+                } catch (SocketTimeoutException e) {
+                    System.out.println("Downloader : pair " + p.getIpAddress() + " injoignable.");
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -121,12 +131,16 @@ public class DownloaderImpl extends Thread implements Downloader {
             // STUB : Wait for the end of the download and exit properly
             executor.shutdown();
             try {
-            executor.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
+                executor.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
                 System.out.println("Downloader : Téléchargement interrompu !");
-            }            
-            System.out.println("Downloader : Téléchargement terminé.");
+            }
 
+            if (queue.isEmpty()) {
+                System.out.println("Downloader : Téléchargement terminé avec succès.");
+            } else {
+                System.out.println("Downloader : Téléchargement échoué (morceaux manquants)");
+            }
 
         } catch (RemoteException e) {
             System.out.println("Diary failed");

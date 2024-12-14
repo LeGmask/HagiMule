@@ -61,12 +61,15 @@ public class DaemonImpl extends Thread implements Daemon {
                         System.out.println("Daemon : frag time : " + (System.currentTimeMillis() - start) + "ms");
                     } 
                 } else {
-                    System.out.println("Le fichier demander n'est pas ouvert par le Daemon");
+                    System.out.println("Le fichier demander n'est pas proposé par le Daemon.");
                 }
 
             } catch (EOFException e) {
-                System.out.println("Daemon Worker : pair déconnecté. TODO better handling");
-            } catch (IOException e) {
+                System.out.println("Daemon Worker : pair s'est déconnecté.");
+            } catch(SocketException e) {
+                System.out.println("Daemon Worker : connection avec le pair rompue.");
+            } 
+            catch (IOException e) {
                 e.printStackTrace();
             }
 
@@ -120,13 +123,13 @@ public class DaemonImpl extends Thread implements Daemon {
             FileInfo info = new FileInfoImpl(filepath, size, String.valueOf(Objects.hash(filepath)), DEFAULT_FRAGSIZE);
             
             System.out.println("Enregistrement du fichier dans le Daemon : " + info.getNom());
-            files.put(info.getHash(), new FileImpl(info, filepath));
+            files.put(info.getHash(), new FileImpl(info, filepath, false));
             Peer p = new PeerImpl(null, port);
             try {
                 index.RegisterFile(info, p);
             } catch (RemoteException e) {
-                e.printStackTrace();
-            }
+                System.out.println("Daemon : une erreur avec le Diary est survenu : " + e.getLocalizedMessage());
+            } 
         } catch (IOException e) {
             e.printStackTrace();
         }
