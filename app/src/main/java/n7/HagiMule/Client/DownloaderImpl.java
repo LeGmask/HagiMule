@@ -91,7 +91,7 @@ public class DownloaderImpl extends Thread implements Downloader {
                                 + " : "
                                 + e.getLocalizedMessage());
                 // something went wrong while downloading fragment
-                // reading to the queue for ulterior retry
+                // re-adding to the queue for ulterior retry
                 queue.add(currentFrag);
             } catch (IOException e) {
                 e.printStackTrace();

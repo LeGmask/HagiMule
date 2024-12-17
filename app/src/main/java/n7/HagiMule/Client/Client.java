@@ -53,8 +53,7 @@ public class Client {
             System.out.println("The RMI server exists, but no Diary Found");
             e.printStackTrace();
         } catch (RemoteException e) {
-            System.out.println("Cannot reach the RMI registry.");
-            e.printStackTrace();
+            System.out.println("Cannot reach the RMI registry : " + e.getLocalizedMessage());
         } catch (ConnectException e) {
             System.out.println(
                     "Connexion refusée. Est-ce que le serveur est allumé et joingable ?");

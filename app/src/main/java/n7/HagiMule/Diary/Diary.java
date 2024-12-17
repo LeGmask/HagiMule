@@ -47,4 +47,19 @@ public interface Diary extends Remote {
      * @param peer the peer to be removed
      */
     public void UnregisterPeer(Peer peer) throws RemoteException;
+
+    /**
+     * Signals that a Peer is still alive
+     *
+     * @param peer
+     * @throws RemoteException
+     */
+    public void peerKeepAlive(Peer peer) throws RemoteException;
+
+    /**
+     * Getter for peers TTL
+     *
+     * @return the TTL
+     */
+    public long getTTL() throws RemoteException;
 }

@@ -95,6 +95,22 @@ public class DaemonImpl extends Thread implements Daemon {
     @Override
     public void run() {
         try {
+            long ttl = index.getTTL();
+            Thread keepAlive =
+                    new Thread() {
+                        public void run() {
+                            try {
+                                while (true) {
+                                    Thread.sleep(ttl / 2);
+                                    index.peerKeepAlive(new PeerImpl(null, port));
+                                }
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    };
+            keepAlive.start();
+
             while (!ss.isClosed()) {
                 executor.submit(new PeerConnexion(ss.accept()));
             }
