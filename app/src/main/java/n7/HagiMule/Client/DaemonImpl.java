@@ -15,7 +15,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
 import n7.HagiMule.Diary.Diary;
 import n7.HagiMule.Shared.File;
 import n7.HagiMule.Shared.FileImpl;
@@ -28,7 +27,7 @@ public class DaemonImpl extends Thread implements Daemon {
 
     public static final int NBPEER = 10;
     public static final int DEFAULT_FRAGSIZE = 40000000;
- 
+
     private Diary index;
     private Map<String, File> files;
     private ExecutorService executor;
@@ -47,29 +46,31 @@ public class DaemonImpl extends Thread implements Daemon {
         @Override
         public void run() {
             try {
-                
+
                 OutputStream ros = remote.getOutputStream();
                 DataInputStream rdis = new DataInputStream(remote.getInputStream());
                 String fileHash = rdis.readUTF();
                 File fichier = files.get(fileHash);
 
-                if(fichier != null) {
-                    while(true) {
+                if (fichier != null) {
+                    while (true) {
                         int fragmentNumber = rdis.readInt();
                         long start = System.currentTimeMillis();
                         ros.write(fichier.readFragment(fragmentNumber));
-                        System.out.println("Daemon : frag time : " + (System.currentTimeMillis() - start) + "ms");
-                    } 
+                        System.out.println(
+                                "Daemon : frag time : "
+                                        + (System.currentTimeMillis() - start)
+                                        + "ms");
+                    }
                 } else {
                     System.out.println("Le fichier demander n'est pas proposé par le Daemon.");
                 }
 
             } catch (EOFException e) {
                 System.out.println("Daemon Worker : pair s'est déconnecté.");
-            } catch(SocketException e) {
+            } catch (SocketException e) {
                 System.out.println("Daemon Worker : connection avec le pair rompue.");
-            } 
-            catch (IOException e) {
+            } catch (IOException e) {
                 e.printStackTrace();
             }
 
@@ -79,11 +80,8 @@ public class DaemonImpl extends Thread implements Daemon {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-
         }
-
     }
-
 
     public DaemonImpl(Diary diary) throws RemoteException, IOException {
         index = diary;
@@ -94,7 +92,7 @@ public class DaemonImpl extends Thread implements Daemon {
         System.out.println("Daemon : lancé sur le port " + port);
     }
 
-    @Override 
+    @Override
     public void run() {
         try {
             while (!ss.isClosed()) {
@@ -106,7 +104,6 @@ public class DaemonImpl extends Thread implements Daemon {
             e.printStackTrace();
         }
     }
-    
 
     public void close() throws IOException {
         System.out.println("Closing Dameon...");
@@ -115,25 +112,29 @@ public class DaemonImpl extends Thread implements Daemon {
         ss.close();
     }
 
-
     @Override
     public void addFichier(String filepath) {
         try {
             long size = Files.size(Paths.get(filepath));
-            FileInfo info = new FileInfoImpl(filepath, size, String.valueOf(Objects.hash(filepath)), DEFAULT_FRAGSIZE);
-            
+            FileInfo info =
+                    new FileInfoImpl(
+                            filepath,
+                            size,
+                            String.valueOf(Objects.hash(filepath)),
+                            DEFAULT_FRAGSIZE);
+
             System.out.println("Enregistrement du fichier dans le Daemon : " + info.getNom());
             files.put(info.getHash(), new FileImpl(info, filepath, false));
             Peer p = new PeerImpl(null, port);
             try {
                 index.RegisterFile(info, p);
             } catch (RemoteException e) {
-                System.out.println("Daemon : une erreur avec le Diary est survenu : " + e.getLocalizedMessage());
-            } 
+                System.out.println(
+                        "Daemon : une erreur avec le Diary est survenu : "
+                                + e.getLocalizedMessage());
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
-
     }
-
 }

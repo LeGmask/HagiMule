@@ -12,7 +12,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class FileImpl implements File {
-    
+
     private FileInfo fileInfo;
     private Path filePath;
     private Lock mutex;
@@ -39,7 +39,6 @@ public class FileImpl implements File {
             e.printStackTrace();
             System.exit(1);
         }
-        
     }
 
     @Override
@@ -54,7 +53,8 @@ public class FileImpl implements File {
     }
 
     public byte[] readFragment(int fragment) throws IOException {
-        ByteBuffer buffer = ByteBuffer.allocate((int) FileInfoImpl.getTailleOfFrag(fileInfo, fragment));
+        ByteBuffer buffer =
+                ByteBuffer.allocate((int) FileInfoImpl.getTailleOfFrag(fileInfo, fragment));
         this.mutex.lock();
         this.channel.read(buffer, fileInfo.getFragmentSize() * fragment);
         this.mutex.unlock();
@@ -62,11 +62,10 @@ public class FileImpl implements File {
     }
 
     public void writeFragment(int fragment, byte[] data, int length) throws IOException {
-        long start = getFileInfo().getFragmentSize() * (long)fragment;
+        long start = getFileInfo().getFragmentSize() * (long) fragment;
         ByteBuffer buff = ByteBuffer.wrap(data).slice(0, length);
         this.mutex.lock();
         this.channel.write(buff, start);
         this.mutex.unlock();
     }
-
 }

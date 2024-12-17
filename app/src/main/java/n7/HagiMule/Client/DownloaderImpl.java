@@ -13,7 +13,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-
 import n7.HagiMule.Diary.Diary;
 import n7.HagiMule.Shared.File;
 import n7.HagiMule.Shared.FileImpl;
@@ -41,7 +40,8 @@ public class DownloaderImpl extends Thread implements Downloader {
             s = new Socket();
             s.connect(new InetSocketAddress(peer.getIpAddress(), peer.getPort()), 10 * 1000);
             s.setSoTimeout(60 * 1000); // max read timeout (1 minute)
-            System.out.println("Connexion établie avec daemon " + peer.getIpAddress() + ":" + peer.getPort());
+            System.out.println(
+                    "Connexion établie avec daemon " + peer.getIpAddress() + ":" + peer.getPort());
             this.info = info;
             this.file = fichier;
         }
@@ -85,8 +85,11 @@ public class DownloaderImpl extends Thread implements Downloader {
 
                 s.close();
             } catch (SocketException | SocketTimeoutException e) {
-                System.out.println("Downloader : une erreur est survenue pour le fragment " + currentFrag + " : "
-                        + e.getLocalizedMessage());
+                System.out.println(
+                        "Downloader : une erreur est survenue pour le fragment "
+                                + currentFrag
+                                + " : "
+                                + e.getLocalizedMessage());
                 // something went wrong while downloading fragment
                 // reading to the queue for ulterior retry
                 queue.add(currentFrag);
@@ -146,7 +149,6 @@ public class DownloaderImpl extends Thread implements Downloader {
             System.out.println("Diary failed");
             e.printStackTrace();
         }
-
     }
 
     @Override
@@ -160,5 +162,4 @@ public class DownloaderImpl extends Thread implements Downloader {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'pause'");
     }
-
 }

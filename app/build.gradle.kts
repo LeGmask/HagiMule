@@ -8,6 +8,7 @@
 plugins {
     // Apply the application plugin to add support for building a CLI application in Java.
     application
+    id("com.diffplug.spotless") version "6.25.0"
 }
 
 repositories {
@@ -48,4 +49,25 @@ tasks.register<JavaExec>("diary") {
     description = "Runs the n7.HagiMule.Diary.Diary class."
     mainClass.set("n7.HagiMule.Diary.DiaryImpl") // Use `mainClass.set` for Kotlin DSL
     classpath = sourceSets["main"].runtimeClasspath // Ensure the classpath is set correctly
+}
+
+configure<com.diffplug.gradle.spotless.SpotlessExtension> {
+    format("misc") {
+        target("*.md", ".gitignore", "*.xml", "*.gradle")
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+    java {
+        importOrder()
+        indentWithTabs()
+        removeUnusedImports()
+        cleanthat()
+        formatAnnotations()
+        googleJavaFormat().aosp().reflowLongStrings().reorderImports(false)
+    }
+    kotlinGradle {
+        ktlint()
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
 }
