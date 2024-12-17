@@ -38,6 +38,7 @@ public class Client {
                                 public void run() {
                                     try {
                                         daemon.close();
+                                        downloader.shutdown();
                                     } catch (IOException e) {
                                         e.printStackTrace();
                                     }

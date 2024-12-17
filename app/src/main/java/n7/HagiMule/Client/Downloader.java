@@ -8,9 +8,7 @@ public interface Downloader {
 
     public int getProgress();
 
-    public void start();
-
     public void pause();
 
-    public void resume();
+    public void shutdown();
 }

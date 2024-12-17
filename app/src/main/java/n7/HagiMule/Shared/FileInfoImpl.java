@@ -33,7 +33,7 @@ public class FileInfoImpl implements FileInfo {
         return this.fragmentSize;
     }
 
-    public static int getFragmentNumber(FileInfo info) {
+    public static int getFragmentsCount(FileInfo info) {
         long a =
                 info.getTaille() / info.getFragmentSize()
                         + (info.getTaille() % info.getFragmentSize() == 0 ? 0 : 1);
@@ -42,7 +42,7 @@ public class FileInfoImpl implements FileInfo {
 
     public static int getTailleOfFrag(FileInfo info, int number) {
         long a =
-                number < (getFragmentNumber(info) - 1)
+                number < (getFragmentsCount(info) - 1)
                         ? info.getFragmentSize()
                         : (info.getTaille() % info.getFragmentSize());
         return (int) a;
