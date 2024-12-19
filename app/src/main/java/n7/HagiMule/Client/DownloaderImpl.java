@@ -9,6 +9,7 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.rmi.RemoteException;
+import java.util.NoSuchElementException;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -34,6 +35,7 @@ public class DownloaderImpl extends Thread implements Downloader {
         private FileInfo info;
         private File file;
         private int currentFrag;
+        private int nextFrag;
 
         public PeerConnexion(Peer peer, FileInfo info, File fichier) throws IOException {
             System.out.println("Ouverture connexion avec " + peer.getIpAddress());
@@ -51,6 +53,7 @@ public class DownloaderImpl extends Thread implements Downloader {
             long io = 0;
             long start = 0;
             try {
+                Boolean exit = false;
 
                 InputStream ris = s.getInputStream();
                 BufferedInputStream rbis = new BufferedInputStream(ris);
@@ -62,12 +65,31 @@ public class DownloaderImpl extends Thread implements Downloader {
                 rbos.writeUTF(info.getHash());
                 rbos.flush();
 
-                while (!queue.isEmpty()) {
-                    currentFrag = queue.poll();
-                    System.out.println("Requesting fragment " + currentFrag);
+
+                // sending initial request
+                try {
+                    nextFrag = queue.remove();
+                } catch (NoSuchElementException e) {
+                    System.out.println("Queue is empty.");
+                    exit = true;
+                }
+                rbos.writeInt(nextFrag);
+                rbos.flush();
+
+                while (!exit) {
+                    currentFrag = nextFrag;
+
+                    // requesting the next fragment in advance
+                    try {
+                        nextFrag = queue.remove();
+                        System.out.println("Requesting fragment " + currentFrag);
+                        rbos.writeInt(nextFrag);
+                        rbos.flush();
+                    } catch (NoSuchElementException e) {
+                        exit = true;
+                    }
                     start = System.currentTimeMillis();
-                    rbos.writeInt(currentFrag);
-                    rbos.flush();
+
 
                     int target = FileInfoImpl.getTailleOfFrag(info, currentFrag);
                     int recv = 0;
@@ -93,6 +115,7 @@ public class DownloaderImpl extends Thread implements Downloader {
                 // something went wrong while downloading fragment
                 // re-adding to the queue for ulterior retry
                 queue.add(currentFrag);
+                queue.add(nextFrag);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -162,4 +185,5 @@ public class DownloaderImpl extends Thread implements Downloader {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'pause'");
     }
+
 }
