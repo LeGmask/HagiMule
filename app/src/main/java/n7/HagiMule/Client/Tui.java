@@ -77,7 +77,7 @@ public class Tui {
                                                                 "Downloading " + fileInfo.getNom());
                                                         // TODO: download the file
                                                         downloader.downloadFile(
-                                                                fileInfo, "downloaded.png");
+                                                                fileInfo, fileInfo.getNom());
                                                         // close the window
                                                         textGUI.removeWindow(window);
                                                     }

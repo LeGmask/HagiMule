@@ -135,7 +135,7 @@ public class DaemonImpl extends Thread implements Daemon {
             long size = Files.size(Paths.get(filepath));
             FileInfo info =
                     new FileInfoImpl(
-                            filepath,
+                            Paths.get(filepath).getFileName().toString(),
                             size,
                             FileUtils.md5Hash(filepath),
                             DEFAULT_FRAGSIZE);
