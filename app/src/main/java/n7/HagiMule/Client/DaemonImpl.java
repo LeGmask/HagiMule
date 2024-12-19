@@ -20,6 +20,7 @@ import n7.HagiMule.Shared.File;
 import n7.HagiMule.Shared.FileImpl;
 import n7.HagiMule.Shared.FileInfo;
 import n7.HagiMule.Shared.FileInfoImpl;
+import n7.HagiMule.Shared.FileUtils;
 import n7.HagiMule.Shared.Peer;
 import n7.HagiMule.Shared.PeerImpl;
 
@@ -136,7 +137,7 @@ public class DaemonImpl extends Thread implements Daemon {
                     new FileInfoImpl(
                             filepath,
                             size,
-                            String.valueOf(Objects.hash(filepath)),
+                            FileUtils.md5Hash(filepath),
                             DEFAULT_FRAGSIZE);
 
             System.out.println("Enregistrement du fichier dans le Daemon : " + info.getNom());
