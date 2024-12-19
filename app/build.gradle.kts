@@ -39,16 +39,25 @@ application {
     mainClass = "n7.HagiMule.Client.Client"
 }
 
-tasks.named<Test>("test") {
-    // Use JUnit Platform for unit tests.
-    useJUnitPlatform()
-}
+// tasks.named<Test>("test") {
+//     // Use JUnit Platform for unit tests.
+//     useJUnitPlatform()
+// }
 
 tasks.register<JavaExec>("diary") {
     group = "application" // Optional: Organize the task under the "application" group
     description = "Runs the n7.HagiMule.Diary.Diary class."
     mainClass.set("n7.HagiMule.Diary.DiaryImpl") // Use `mainClass.set` for Kotlin DSL
     classpath = sourceSets["main"].runtimeClasspath // Ensure the classpath is set correctly
+}
+
+tasks.named<Jar>("jar") {
+    from(configurations.runtimeClasspath.get().filter { it.exists() }.map { if (it.isDirectory) it else zipTree(it) })
+    manifest {
+        attributes(
+            "Main-Class" to "n7.HagiMule.Client.Client"  // Spécifiez la classe principale ici
+        )
+    }
 }
 
 configure<com.diffplug.gradle.spotless.SpotlessExtension> {
