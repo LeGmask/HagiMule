@@ -1,16 +1,17 @@
 package n7.HagiMule.Client;
 
+import java.util.List;
 import n7.HagiMule.Shared.FileInfo;
 
 public interface Downloader {
 
-    public void downloadFile(FileInfo info, String savingPath);
+    public int submit(FileInfo info, String savePath);
 
-    public int getProgress();
+    public List<Download> getAll();
 
-    public void start();
+    public Download get(int id);
 
-    public void pause();
+    public void pauseAll();
 
-    public void resume();
+    public void resumeAll();
 }

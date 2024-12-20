@@ -55,7 +55,7 @@ tasks.named<Jar>("jar") {
     from(configurations.runtimeClasspath.get().filter { it.exists() }.map { if (it.isDirectory) it else zipTree(it) })
     manifest {
         attributes(
-            "Main-Class" to "n7.HagiMule.Client.Client"  // Spécifiez la classe principale ici
+            "Main-Class" to "n7.HagiMule.Client.Client",
         )
     }
 }

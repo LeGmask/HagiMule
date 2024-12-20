@@ -3,8 +3,10 @@ package n7.HagiMule.Client;
 import com.googlecode.lanterna.gui2.ActionListBox;
 import com.googlecode.lanterna.gui2.BasicWindow;
 import com.googlecode.lanterna.gui2.Button;
+import com.googlecode.lanterna.gui2.Label;
 import com.googlecode.lanterna.gui2.MultiWindowTextGUI;
 import com.googlecode.lanterna.gui2.Panel;
+import com.googlecode.lanterna.gui2.ProgressBar;
 import com.googlecode.lanterna.gui2.WindowBasedTextGUI;
 import com.googlecode.lanterna.gui2.dialogs.FileDialogBuilder;
 import com.googlecode.lanterna.screen.Screen;
@@ -14,6 +16,8 @@ import com.googlecode.lanterna.terminal.Terminal;
 import java.io.File;
 import java.io.IOException;
 import java.rmi.RemoteException;
+import java.util.Timer;
+import java.util.TimerTask;
 import n7.HagiMule.Diary.Diary;
 import n7.HagiMule.Shared.FileInfo;
 
@@ -41,6 +45,8 @@ public class Tui {
 
         // Create panel to hold components
         Panel panel = new Panel();
+        Panel downloads = new Panel();
+
         panel.addComponent(
                 new Button(
                         "Upload",
@@ -75,10 +81,29 @@ public class Tui {
                                                     public void run() {
                                                         System.out.println(
                                                                 "Downloading " + fileInfo.getNom());
-                                                        // TODO: download the file
-                                                        downloader.downloadFile(
-                                                                fileInfo, fileInfo.getNom());
+                                                        int dID =
+                                                                downloader.submit(
+                                                                        fileInfo,
+                                                                        fileInfo.getNom());
                                                         // close the window
+                                                        downloads.addComponent(
+                                                                new Label(fileInfo.getNom()));
+                                                        ProgressBar pB = new ProgressBar();
+                                                        pB.setPreferredWidth(50);
+                                                        downloads.addComponent(pB);
+                                                        Timer t = new Timer();
+                                                        t.schedule(
+                                                                new TimerTask() {
+                                                                    @Override
+                                                                    public void run() {
+                                                                        pB.setValue(
+                                                                                (downloader
+                                                                                        .get(dID)
+                                                                                        .getProgress()));
+                                                                    }
+                                                                },
+                                                                1,
+                                                                100);
                                                         textGUI.removeWindow(window);
                                                     }
                                                 });
@@ -92,6 +117,9 @@ public class Tui {
                                 textGUI.addWindowAndWait(window);
                             }
                         }));
+
+        // add download panel to main panel
+        panel.addComponent(downloads);
 
         // Create window to hold the panel
         BasicWindow window = new BasicWindow();

@@ -29,7 +29,6 @@ public class Client {
             daemon.start();
 
             DownloaderImpl downloader = new DownloaderImpl(index);
-            downloader.start();
 
             // adding a shutdown hook to unregister the Daemon and free the port
             Runtime.getRuntime()
