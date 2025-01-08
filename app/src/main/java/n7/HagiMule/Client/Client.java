@@ -94,11 +94,7 @@ public class Client {
             if (args[i].equals("--no-tui")) {
                 tui = false;
             } else if (args[i].equals("--files")) {
-                String pwd = System.getProperty("user.dir");
                 files = args[i + 1].split(",");
-                for (int j = 0; j < files.length; j++) {
-                    files[j] = pwd + "/" + files[j];
-                }
                 i++;
             } else if (args[i].equals("--help")) {
                 printHelp();
