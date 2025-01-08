@@ -1,0 +1,59 @@
+name: Build and Push Docker Images
+
+on:
+  push:
+    branches: ['master']
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+
+    steps:
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push diary
+        id: push_diary
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          tags: ${{ env.REGISTRY }}/legmask/hagimule/diary:latest
+          target: diary
+      
+      - name: Build and push client
+        id: push_client
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          tags: ${{ env.REGISTRY }}/legmask/hagimule/client:latest
+          target: client
+      
+      - name: Generate artifact attestation for diary
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-name: ${{ env.REGISTRY }}/legmask/hagimule/diary
+          subject-digest: ${{ steps.push_diary.outputs.digest }}
+          push-to-registry: true
+      
+      - name: Generate artifact attestation for client
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-name: ${{ env.REGISTRY }}/legmask/hagimule/client
+          subject-digest: ${{ steps.push_client.outputs.digest }}
+          push-to-registry: true
