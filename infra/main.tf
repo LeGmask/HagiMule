@@ -1,3 +1,7 @@
+variable "client_count" {
+  default = 1
+}
+
 resource "aws_instance" "diary" {
   ami                         = "ami-0d16a00c70ee279b8" # Amazon Linux 2 AMI
   instance_type               = "t2.micro"
@@ -21,7 +25,7 @@ resource "aws_instance" "diary" {
 }
 
 resource "aws_instance" "client" {
-  count = 1
+  count = var.client_count
 
   ami                         = "ami-0d16a00c70ee279b8" # Amazon Linux 2 AMI
   instance_type               = "t2.micro"
@@ -37,8 +41,7 @@ resource "aws_instance" "client" {
     dd if=/dev/zero of=/media/fichier_3go.bin bs=1M count=3072
     # dd if=/dev/zero of=/media/fichier_5go.bin bs=1M count=5120
 
-
-    docker run --network host -d --volume /media:/media ghcr.io/legmask/hagimule/client:latest ${aws_instance.diary.public_ip} 4000 --no-tui --files /media/fichier_1go.bin,/media/fichier_3go.bin
+    sudo docker run --network host -d -it --volume /media:/media ghcr.io/legmask/hagimule/client:latest ${aws_instance.diary.public_ip} 4000 --no-tui --files /media/fichier_1go.bin,/media/fichier_3go.bin
   EOF
 
   tags = {
