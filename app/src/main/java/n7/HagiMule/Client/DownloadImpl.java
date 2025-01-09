@@ -134,10 +134,14 @@ public class DownloadImpl implements Download, Runnable {
     public void run() {
         long nbFrag = FileInfoImpl.getFragmentNumber(fichier.getFileInfo());
 
-        System.out.println("Téléchargement de " + nbFrag + " fragments");
+        System.out.println(
+                "=== Starting to download " + fichier.getFileInfo().getNom() + " with " + nbFrag + " fragments ===");
+
         for (int i = 0; i < nbFrag; i++) {
             queue.add(i);
         }
+
+        long start = System.currentTimeMillis();
         try {
             Peer[] peers = diary.getPeers(fichier.getFileInfo().getHash());
             System.out.println("Downloader : " + peers.length + " pair(s) trouvé(s)");
@@ -173,6 +177,11 @@ public class DownloadImpl implements Download, Runnable {
             System.out.println("Diary failed");
             e.printStackTrace();
         }
+
+        long end = System.currentTimeMillis();
+        System.out.println(
+                "=== Download of " + fichier.getFileInfo().getNom() + " took " + (end - start) / 1000
+                        + "s, at a speed of " + (fichier.getFileInfo().getTaille() / (end - start)) + "B/s ===");
     }
 
     @Override
