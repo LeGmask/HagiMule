@@ -2,8 +2,17 @@ variable "client_count" {
   default = 1
 }
 
+data "aws_ssm_parameter" "amzn_linux_2" {
+  name = "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
+}
+
+resource "aws_key_pair" "ship7" {
+  key_name   = "ship7"
+  public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIP3crGPx4JKVSJ422WfxFCG/nEb2sSSjq4YUteGWkvQm"
+}
+
 resource "aws_instance" "diary" {
-  ami                         = "ami-0d16a00c70ee279b8" # Amazon Linux 2 AMI
+  ami                         = data.aws_ssm_parameter.amzn_linux_2.value
   instance_type               = "t2.micro"
   associate_public_ip_address = true
   user_data                   = <<-EOF
@@ -21,13 +30,14 @@ resource "aws_instance" "diary" {
     Name = "diary"
   }
 
+  key_name               = aws_key_pair.ship7.key_name
   vpc_security_group_ids = [aws_security_group.hagimule-security-group.id]
 }
 
 resource "aws_instance" "client" {
   count = var.client_count
 
-  ami                         = "ami-0d16a00c70ee279b8" # Amazon Linux 2 AMI
+  ami                         = data.aws_ssm_parameter.amzn_linux_2.value
   instance_type               = "t2.micro"
   associate_public_ip_address = true
   user_data                   = <<-EOF
@@ -48,6 +58,7 @@ resource "aws_instance" "client" {
     Name = "client ${count.index}"
   }
 
+  key_name               = aws_key_pair.ship7.key_name
   vpc_security_group_ids = [aws_security_group.hagimule-security-group.id]
 }
 
