@@ -21,7 +21,7 @@ import n7.HagiMule.Shared.PeerImpl;
 
 public class DiaryImpl extends UnicastRemoteObject implements Diary {
 
-    public static final int TTL = 300000; // 5 minutes TTL
+    public static final int TTL = 10000; // 10 sec TTL
 
     private Map<String, FileInfo> files;
     private Map<Peer, Set<String>> peers;

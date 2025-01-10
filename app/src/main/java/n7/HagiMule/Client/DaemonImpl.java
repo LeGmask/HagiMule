@@ -25,7 +25,8 @@ import n7.HagiMule.Shared.PeerImpl;
 
 public class DaemonImpl extends Thread implements Daemon {
 
-    public static final int NBPEER = 10;
+    public static final int NBPEER = 1;
+    private int NBACTIV = 0;
     public static final int DEFAULT_FRAGSIZE = 40000000;
 
     private Diary index;
@@ -36,7 +37,7 @@ public class DaemonImpl extends Thread implements Daemon {
 
     private class PeerConnexion implements Runnable {
 
-        private Socket remote;
+        public Socket remote;
 
         public PeerConnexion(Socket s) {
             System.out.println("Connexion établie avec client " + s.getInetAddress().toString());
@@ -46,7 +47,7 @@ public class DaemonImpl extends Thread implements Daemon {
         @Override
         public void run() {
             try {
-
+                NBACTIV++;
                 OutputStream ros = remote.getOutputStream();
                 DataInputStream rdis = new DataInputStream(remote.getInputStream());
                 String fileHash = rdis.readUTF();
@@ -80,6 +81,8 @@ public class DaemonImpl extends Thread implements Daemon {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+
+            NBACTIV--;
         }
     }
 
@@ -102,7 +105,9 @@ public class DaemonImpl extends Thread implements Daemon {
                             try {
                                 while (true) {
                                     Thread.sleep(ttl / 2);
-                                    index.peerKeepAlive(new PeerImpl(null, port));
+                                    float load = ((float) NBACTIV) / NBPEER;
+                                    System.out.println("TTL load " + load);
+                                    index.peerKeepAlive(new PeerImpl(null, port, load));
                                 }
                             } catch (Exception e) {
                                 e.printStackTrace();
@@ -112,7 +117,14 @@ public class DaemonImpl extends Thread implements Daemon {
             keepAlive.start();
 
             while (!ss.isClosed()) {
-                executor.submit(new PeerConnexion(ss.accept()));
+                PeerConnexion pc = new PeerConnexion(ss.accept());
+                if (NBACTIV < NBPEER) {
+                    // we have remaning capacity, so we accept the connexion
+                    executor.submit(pc);
+                } else {
+                    // we're full, so we reject the connexion
+                    pc.remote.close();
+                }
             }
         } catch (SocketException e) {
             e.printStackTrace();

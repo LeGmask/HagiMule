@@ -9,6 +9,8 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.rmi.RemoteException;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.NoSuchElementException;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
@@ -23,7 +25,7 @@ import n7.HagiMule.Shared.Peer;
 
 public class DownloadImpl implements Download, Runnable {
 
-    public static final int NBDLSIMUL = 15;
+    public static final int NBSOURCES = 15;
 
     private Diary diary;
     private ExecutorService executor;
@@ -114,6 +116,7 @@ public class DownloadImpl implements Download, Runnable {
                                 + e.getLocalizedMessage());
                 // something went wrong while downloading fragment
                 // re-adding to the queue for ulterior retry
+                System.out.println("Downloader : si l'erreur survient pour le premier fragment, il est possible que la source soit hors-ligne ou trop occupée.");
                 queue.add(currentFrag);
                 queue.add(nextFrag);
             } catch (IOException e) {
@@ -126,7 +129,7 @@ public class DownloadImpl implements Download, Runnable {
         this.diary = diary;
         fichier = new FileImpl(info, savingPath, true);
 
-        executor = Executors.newFixedThreadPool(NBDLSIMUL);
+        executor = Executors.newFixedThreadPool(NBSOURCES);
         queue = new ConcurrentLinkedQueue<Integer>();
     }
 
@@ -135,7 +138,11 @@ public class DownloadImpl implements Download, Runnable {
         long nbFrag = FileInfoImpl.getFragmentNumber(fichier.getFileInfo());
 
         System.out.println(
-                "=== Starting to download " + fichier.getFileInfo().getNom() + " with " + nbFrag + " fragments ===");
+                "=== Starting to download "
+                        + fichier.getFileInfo().getNom()
+                        + " with "
+                        + nbFrag
+                        + " fragments ===");
 
         for (int i = 0; i < nbFrag; i++) {
             queue.add(i);
@@ -145,6 +152,15 @@ public class DownloadImpl implements Download, Runnable {
             long start = System.currentTimeMillis();
 
             Peer[] peers = diary.getPeers(fichier.getFileInfo().getHash());
+            // sorting peers depending on their load factor, favoring light-loaded peers
+            Arrays.sort(
+                    peers,
+                    new Comparator<Peer>() {
+                        public int compare(Peer p1, Peer p2) {
+                            return p1.getLoad() > p2.getLoad() ? 1 : (-1);
+                        }
+                    });
+
             System.out.println("Downloader : " + peers.length + " pair(s) trouvé(s)");
             for (Peer p : peers) {
                 try {
@@ -169,8 +185,12 @@ public class DownloadImpl implements Download, Runnable {
             if (queue.isEmpty()) {
                 long end = System.currentTimeMillis();
                 System.out.println(
-                        "=== Download of " + fichier.getFileInfo().getNom() + " took " + (end - start) / 1000
-                                + "s, at a speed of " + (fichier.getFileInfo().getTaille() / (end - start))
+                        "=== Download of "
+                                + fichier.getFileInfo().getNom()
+                                + " took "
+                                + (end - start) / 1000
+                                + "s, at a speed of "
+                                + (fichier.getFileInfo().getTaille() / (end - start))
                                 + "B/s ===");
                 status = DownloadStatus.FINISHED;
             } else {

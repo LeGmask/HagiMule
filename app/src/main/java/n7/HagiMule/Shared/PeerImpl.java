@@ -7,11 +7,17 @@ public class PeerImpl implements Peer {
     private InetAddress ipAddress;
     private int port;
     private int hashCode;
+    private float load;
 
-    public PeerImpl(InetAddress ipAddress, int port) {
+    public PeerImpl(InetAddress ipAddress, int port, float load) {
         this.ipAddress = ipAddress;
         this.port = port;
         this.hashCode = Objects.hash(this.ipAddress, this.port);
+        this.load = load;
+    }
+
+    public PeerImpl(InetAddress ipAddress, int port) {
+        this(ipAddress, port, 0f);
     }
 
     @Override
@@ -22,6 +28,11 @@ public class PeerImpl implements Peer {
     @Override
     public int getPort() {
         return port;
+    }
+
+    @Override
+    public float getLoad() {
+        return load;
     }
 
     @Override

@@ -17,4 +17,11 @@ public interface Peer extends Serializable {
      * @return the peer's port
      */
     public int getPort();
+
+    /**
+     * Get the peer's load factor
+     *
+     * @return the peer's load factor
+     */
+    public float getLoad();
 }
