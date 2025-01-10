@@ -1,5 +1,16 @@
 # HagiMule
 
+## Benchmark
+
+Results as of 10-01-25 12:54 :
+| Clients | Time | Speed    |
+| ------- | ---- | -------- |
+| 1       | 60   | 17619B/s |
+| 3       | 27   | 38604B/s |
+| 5       | 27   | 39458B/s |
+| 10      | 24   | 44067B/s |
+
+
 ## Launch the project in the cloud
 
 :::info
