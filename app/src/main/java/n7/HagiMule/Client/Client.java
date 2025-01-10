@@ -6,6 +6,7 @@ import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import n7.HagiMule.Diary.Diary;
+import n7.HagiMule.Shared.FileInfo;
 
 // catch (ConnectException e) {
 // System.out.println("Connexion refusée. Est-ce que le serveur est allumé et joingable ?");}
@@ -15,12 +16,13 @@ public class Client {
     DaemonImpl daemon;
     DownloaderImpl downloader;
 
-    public Client(Boolean tui, String host, String port, String[] files) {
+    public Client(Boolean tui, String host, String port, String[] files, String[] dls) {
         initializeComponents(host, port);
         registerHooks();
         startComponents();
 
         registerInitialFiles(files);
+        requestInitialDownloads(dls);
 
         if (tui)
             try {
@@ -73,8 +75,20 @@ public class Client {
         }
     }
 
+    private void requestInitialDownloads(String[] dls) {
+        for (String dl : dls) {
+            try {
+                FileInfo file = index.RequestFile(dl);
+                downloader.submit(file, "/dev/null");
+            } catch (RemoteException e) {
+                System.out.println("Cannot download file : " + e.getLocalizedMessage());
+            }
+
+        }
+    }
+
     public static void printHelp() {
-        System.out.println("Usage : java Client <diary address> <diary port> [--no-tui]");
+        System.out.println("Usage : java Client <diary address> <diary port> [--no-tui] [--files <file1,file2,...>]");
     }
 
     public static void main(String[] args) throws IOException {
@@ -88,6 +102,7 @@ public class Client {
         Boolean tui = true;
 
         String[] files = new String[0];
+        String[] dls = new String[0];
 
         // if --no-tui is passed, we don't start the TUI
         for (int i = 2; i < args.length; i++) {
@@ -95,6 +110,9 @@ public class Client {
                 tui = false;
             } else if (args[i].equals("--files")) {
                 files = args[i + 1].split(",");
+                i++;
+            } else if (args[i].equals("--dl")) {
+                dls = args[i + 1].split(",");
                 i++;
             } else if (args[i].equals("--help")) {
                 printHelp();
@@ -104,6 +122,6 @@ public class Client {
 
         System.out.println("Starting client with Files : ");
 
-        new Client(tui, host, port, files);
+        new Client(tui, host, port, files, dls);
     }
 }
