@@ -20,7 +20,7 @@ resource "aws_instance" "diary" {
     yum update -y
     amazon-linux-extras install docker -y
     service docker start   
-    sudo docker run --network host -it -d --entrypoint "java" ghcr.io/legmask/hagimule/diary:latest \
+    sudo docker run --network host -it -d --name diary --entrypoint "java" ghcr.io/legmask/hagimule/diary:latest \
       -Djava.rmi.server.hostname=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4) \
       -cp app.jar n7.HagiMule.Diary.DiaryImpl 0.0.0.0
     
@@ -51,7 +51,7 @@ resource "aws_instance" "client" {
     dd if=/dev/zero of=/media/fichier_3go.bin bs=1M count=3072
     # dd if=/dev/zero of=/media/fichier_5go.bin bs=1M count=5120
 
-    sudo docker run --network host -d -it --volume /media:/media ghcr.io/legmask/hagimule/client:latest ${aws_instance.diary.public_ip} 4000 --no-tui --files /media/fichier_1go.bin,/media/fichier_3go.bin
+    sudo docker run --network host -d -it --name client --volume /media:/media ghcr.io/legmask/hagimule/client:latest ${aws_instance.diary.public_ip} 4000 --no-tui --files /media/fichier_1go.bin,/media/fichier_3go.bin
   EOF
 
   tags = {
