@@ -11,7 +11,9 @@ import java.net.SocketTimeoutException;
 import java.rmi.RemoteException;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -25,13 +27,17 @@ import n7.HagiMule.Shared.Peer;
 
 public class DownloadImpl implements Download, Runnable {
 
-    public static final int NBSOURCES = 15;
+    public static final int NBSOURCES = 10; // at most use 5 sources simultaneously
+    public static final int POLLRATE = 10000; // poll index for new peers every 10 seconds
 
     private Diary diary;
     private ExecutorService executor;
+    private Set<Peer> activePeers;
     private ConcurrentLinkedQueue<Integer> queue;
     private DownloadStatus status;
     private File fichier;
+
+    private long lastFragReceived;
 
     private class PeerConnexion implements Runnable {
 
@@ -40,6 +46,7 @@ public class DownloadImpl implements Download, Runnable {
         private File file;
         private int currentFrag;
         private int nextFrag;
+
 
         public PeerConnexion(Peer peer, FileInfo info, File fichier) throws IOException {
             System.out.println("Ouverture connexion avec " + peer.getIpAddress());
@@ -103,7 +110,7 @@ public class DownloadImpl implements Download, Runnable {
                     start = System.currentTimeMillis();
                     file.writeFragment(currentFrag, buff, recv);
                     io = io + System.currentTimeMillis() - start;
-
+                    lastFragReceived = System.currentTimeMillis();
                     System.out.println("Downloader : IO : " + io + " | NET : " + net);
                 }
 
@@ -116,7 +123,9 @@ public class DownloadImpl implements Download, Runnable {
                                 + e.getLocalizedMessage());
                 // something went wrong while downloading fragment
                 // re-adding to the queue for ulterior retry
-                System.out.println("Downloader : si l'erreur survient pour le premier fragment, il est possible que la source soit hors-ligne ou trop occupée.");
+                System.out.println(
+                        "Downloader : si l'erreur survient pour le premier fragment, il est"
+                                + " possible que la source soit hors-ligne ou trop occupée.");
                 queue.add(currentFrag);
                 queue.add(nextFrag);
             } catch (IOException e) {
@@ -131,6 +140,7 @@ public class DownloadImpl implements Download, Runnable {
 
         executor = Executors.newFixedThreadPool(NBSOURCES);
         queue = new ConcurrentLinkedQueue<Integer>();
+        activePeers = new HashSet<Peer>();
     }
 
     @Override
@@ -151,30 +161,47 @@ public class DownloadImpl implements Download, Runnable {
         try {
             long start = System.currentTimeMillis();
 
-            Peer[] peers = diary.getPeers(fichier.getFileInfo().getHash());
-            // sorting peers depending on their load factor, favoring light-loaded peers
-            Arrays.sort(
-                    peers,
-                    new Comparator<Peer>() {
-                        public int compare(Peer p1, Peer p2) {
-                            return p1.getLoad() > p2.getLoad() ? 1 : (-1);
+            try {
+                while (!queue.isEmpty()) {
+                    // while download is not done
+                    // get peers from diary
+                    Set<Peer> remotePeers =
+                            new HashSet<Peer>(
+                                    Arrays.asList(diary.getPeers(fichier.getFileInfo().getHash())));
+                    // only consider new peers                
+                    remotePeers.removeAll(activePeers);
+                    Peer[] newPeers = remotePeers.toArray(new Peer[remotePeers.size()]);
+                    // sorting peers depending on their load factor, favoring light-loaded peers
+                    Arrays.sort(
+                            newPeers,
+                            new Comparator<Peer>() {
+                                public int compare(Peer p1, Peer p2) {
+                                    return p1.getLoad() > p2.getLoad() ? 1 : (-1);
+                                }
+                            });
+
+                    System.out.println(
+                            "Downloader : " + newPeers.length + " nouveau pair(s) trouvé(s)");
+                    for (Peer p : newPeers) {
+                        try {
+                            PeerConnexion conn =
+                                    new PeerConnexion(p, fichier.getFileInfo(), fichier);
+                            executor.submit(conn);
+                            activePeers.add(p);
+                        } catch (SocketTimeoutException e) {
+                            System.out.println(
+                                    "Downloader : pair " + p.getIpAddress() + " injoignable.");
+                        } catch (IOException e) {
+                            e.printStackTrace();
                         }
-                    });
+                    }
 
-            System.out.println("Downloader : " + peers.length + " pair(s) trouvé(s)");
-            for (Peer p : peers) {
-                try {
-                    PeerConnexion conn = new PeerConnexion(p, fichier.getFileInfo(), fichier);
-                    executor.submit(conn);
-                } catch (SocketTimeoutException e) {
-                    System.out.println("Downloader : pair " + p.getIpAddress() + " injoignable.");
-                } catch (IOException e) {
-                    e.printStackTrace();
+                    Thread.sleep(POLLRATE);
                 }
+            } catch (InterruptedException e) {
+                System.out.println("Downloader : interrupted !");
             }
-            // TODO : change for active monitoring + résilience
 
-            // STUB : Wait for the end of the download and exit properly
             executor.shutdown();
             try {
                 executor.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
@@ -183,14 +210,13 @@ public class DownloadImpl implements Download, Runnable {
             }
 
             if (queue.isEmpty()) {
-                long end = System.currentTimeMillis();
                 System.out.println(
                         "=== Download of "
                                 + fichier.getFileInfo().getNom()
                                 + " took "
-                                + (end - start) / 1000
+                                + (lastFragReceived - start) / 1000
                                 + "s, at a speed of "
-                                + (fichier.getFileInfo().getTaille() / (end - start))
+                                + (fichier.getFileInfo().getTaille() / (lastFragReceived - start))
                                 + "B/s ===");
                 status = DownloadStatus.FINISHED;
             } else {
