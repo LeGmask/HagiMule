@@ -8,15 +8,14 @@ import n7.HagiMule.Shared.FileInfo;
 public class DownloaderImpl implements Downloader {
 
     private List<Thread> tasks;
-    private List<Download>
-            downloads; // très moche d'avoir les deux séparés. les indices *doivent* rester cohérent
+    private List<Download> downloads; // très moche d'avoir les deux séparés. les indices *doivent* rester cohérent
 
     private Diary index;
 
-    public DownloaderImpl(Diary d) {
+    public DownloaderImpl(Diary index) {
+        this.index = index;
         tasks = new ArrayList<>();
         downloads = new ArrayList<>();
-        index = d;
     }
 
     @Override

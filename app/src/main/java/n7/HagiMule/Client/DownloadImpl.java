@@ -23,7 +23,7 @@ import n7.HagiMule.Shared.Peer;
 
 public class DownloadImpl implements Download, Runnable {
 
-    public static final int NBDLSIMUL = 5;
+    public static final int NBDLSIMUL = 15;
 
     private Diary diary;
     private ExecutorService executor;
@@ -141,8 +141,9 @@ public class DownloadImpl implements Download, Runnable {
             queue.add(i);
         }
 
-        long start = System.currentTimeMillis();
         try {
+            long start = System.currentTimeMillis();
+
             Peer[] peers = diary.getPeers(fichier.getFileInfo().getHash());
             System.out.println("Downloader : " + peers.length + " pair(s) trouvé(s)");
             for (Peer p : peers) {
@@ -166,7 +167,11 @@ public class DownloadImpl implements Download, Runnable {
             }
 
             if (queue.isEmpty()) {
-                System.out.println("Downloader : Téléchargement terminé avec succès.");
+                long end = System.currentTimeMillis();
+                System.out.println(
+                        "=== Download of " + fichier.getFileInfo().getNom() + " took " + (end - start) / 1000
+                                + "s, at a speed of " + (fichier.getFileInfo().getTaille() / (end - start))
+                                + "B/s ===");
                 status = DownloadStatus.FINISHED;
             } else {
                 System.out.println("Downloader : Téléchargement échoué (morceaux manquants)");
@@ -177,11 +182,6 @@ public class DownloadImpl implements Download, Runnable {
             System.out.println("Diary failed");
             e.printStackTrace();
         }
-
-        long end = System.currentTimeMillis();
-        System.out.println(
-                "=== Download of " + fichier.getFileInfo().getNom() + " took " + (end - start) / 1000
-                        + "s, at a speed of " + (fichier.getFileInfo().getTaille() / (end - start)) + "B/s ===");
     }
 
     @Override

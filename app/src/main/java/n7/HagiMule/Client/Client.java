@@ -16,13 +16,13 @@ public class Client {
     DaemonImpl daemon;
     DownloaderImpl downloader;
 
-    public Client(Boolean tui, String host, String port, String[] files, String[] dls) {
+    public Client(Boolean tui, String host, String port, String[] files, String dl) {
         initializeComponents(host, port);
         registerHooks();
         startComponents();
 
         registerInitialFiles(files);
-        requestInitialDownloads(dls);
+        requestDownload(dl);
 
         if (tui)
             try {
@@ -75,15 +75,28 @@ public class Client {
         }
     }
 
-    private void requestInitialDownloads(String[] dls) {
-        for (String dl : dls) {
+    private void requestDownload(String dl) {
+        if (!dl.isEmpty()) {
             try {
                 FileInfo file = index.RequestFile(dl);
-                downloader.submit(file, "/dev/null");
+                int id = downloader.submit(file, "/dev/null");
+
+                // Start a thread that wait for the download to finish and then exit the program
+                new Thread(
+                        () -> {
+                            while (downloader.get(id).getStatus() != DownloadStatus.FINISHED) {
+                                try {
+                                    Thread.sleep(1000);
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                            System.exit(0);
+                        })
+                        .start();
             } catch (RemoteException e) {
                 System.out.println("Cannot download file : " + e.getLocalizedMessage());
             }
-
         }
     }
 
@@ -102,7 +115,7 @@ public class Client {
         Boolean tui = true;
 
         String[] files = new String[0];
-        String[] dls = new String[0];
+        String dl = "";
 
         // if --no-tui is passed, we don't start the TUI
         for (int i = 2; i < args.length; i++) {
@@ -112,7 +125,7 @@ public class Client {
                 files = args[i + 1].split(",");
                 i++;
             } else if (args[i].equals("--dl")) {
-                dls = args[i + 1].split(",");
+                dl = args[i + 1];
                 i++;
             } else if (args[i].equals("--help")) {
                 printHelp();
@@ -122,6 +135,6 @@ public class Client {
 
         System.out.println("Starting client with Files : ");
 
-        new Client(tui, host, port, files, dls);
+        new Client(tui, host, port, files, dl);
     }
 }
