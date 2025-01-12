@@ -48,7 +48,6 @@ public class DownloadImpl implements Download, Runnable {
         private int currentFrag;
         private int nextFrag;
 
-
         public PeerConnexion(Peer peer, FileInfo info, File fichier) throws IOException {
             System.out.println("Ouverture connexion avec " + peer.getIpAddress());
             s = new Socket();
@@ -89,6 +88,16 @@ public class DownloadImpl implements Download, Runnable {
 
                 while (!exit) {
                     currentFrag = nextFrag;
+
+                    if (status == DownloadStatus.PAUSED) {
+                        try {
+                            Thread.sleep(100);
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            System.out.println("Downloader : interrupted during sleep");
+                        }
+                        continue;
+                    }
 
                     // requesting the next fragment in advance
                     try {
@@ -154,6 +163,7 @@ public class DownloadImpl implements Download, Runnable {
                         + " with "
                         + nbFrag
                         + " fragments ===");
+        this.status = DownloadStatus.RUNNING;
 
         for (int i = 0; i < nbFrag; i++) {
             queue.add(i);
@@ -164,12 +174,17 @@ public class DownloadImpl implements Download, Runnable {
 
             try {
                 while (!queue.isEmpty()) {
+                    if (status == DownloadStatus.PAUSED) {
+                        System.out.println("Downloader : paused");
+                        Thread.sleep(POLLRATE);
+                        continue;
+                    }
+
                     // while download is not done
                     // get peers from diary
-                    Set<Peer> remotePeers =
-                            new HashSet<Peer>(
-                                    Arrays.asList(diary.getPeers(fichier.getFileInfo().getHash())));
-                    // only consider new peers                
+                    Set<Peer> remotePeers = new HashSet<Peer>(
+                            Arrays.asList(diary.getPeers(fichier.getFileInfo().getHash())));
+                    // only consider new peers
                     remotePeers.removeAll(activePeers);
                     Peer[] newPeers = remotePeers.toArray(new Peer[remotePeers.size()]);
                     // sorting peers depending on their load factor, favoring light-loaded peers
@@ -185,8 +200,7 @@ public class DownloadImpl implements Download, Runnable {
                             "Downloader : " + newPeers.length + " nouveau pair(s) trouvé(s)");
                     for (Peer p : newPeers) {
                         try {
-                            PeerConnexion conn =
-                                    new PeerConnexion(p, fichier.getFileInfo(), fichier);
+                            PeerConnexion conn = new PeerConnexion(p, fichier.getFileInfo(), fichier);
                             executor.submit(conn);
                             activePeers.add(p);
                         } catch (SocketTimeoutException e) {
@@ -222,7 +236,7 @@ public class DownloadImpl implements Download, Runnable {
                                 + "B/s ===");
                 // all fragments downloaded
                 String dlHash = FileUtils.md5Hash(fichier.getStrPath());
-                if(dlHash.equals(fichier.getFileInfo().getHash())) {
+                if (dlHash.equals(fichier.getFileInfo().getHash())) {
                     System.out.println("Integrity Check OK");
                     status = DownloadStatus.FINISHED;
                 } else {
@@ -241,6 +255,11 @@ public class DownloadImpl implements Download, Runnable {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    @Override
+    public String getFileName() {
+        return fichier.getFileInfo().getNom();
     }
 
     @Override

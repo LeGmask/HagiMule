@@ -72,7 +72,7 @@ public class FileImpl implements File {
     @Override
     public void close() throws IOException {
         // closing uderlying nio channel
-       this.channel.close();
+        this.channel.close();
     }
 
     @Override

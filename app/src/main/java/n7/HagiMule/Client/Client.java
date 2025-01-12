@@ -5,6 +5,7 @@ import java.net.MalformedURLException;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
+import n7.HagiMule.Client.Tui.Tui;
 import n7.HagiMule.Diary.Diary;
 import n7.HagiMule.Shared.FileInfo;
 
@@ -83,16 +84,17 @@ public class Client {
 
                 // Start a thread that wait for the download to finish and then exit the program
                 new Thread(
-                        () -> {
-                            while (downloader.get(id).getStatus() != DownloadStatus.FINISHED) {
-                                try {
-                                    Thread.sleep(1000);
-                                } catch (InterruptedException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                            System.exit(0);
-                        })
+                                () -> {
+                                    while (downloader.get(id).getStatus()
+                                            != DownloadStatus.FINISHED) {
+                                        try {
+                                            Thread.sleep(1000);
+                                        } catch (InterruptedException e) {
+                                            e.printStackTrace();
+                                        }
+                                    }
+                                    System.exit(0);
+                                })
                         .start();
             } catch (RemoteException e) {
                 System.out.println("Cannot download file : " + e.getLocalizedMessage());
@@ -101,7 +103,9 @@ public class Client {
     }
 
     public static void printHelp() {
-        System.out.println("Usage : java Client <diary address> <diary port> [--no-tui] [--files <file1,file2,...>]");
+        System.out.println(
+                "Usage : java Client <diary address> <diary port> [--no-tui] [--files"
+                        + " <file1,file2,...>]");
     }
 
     public static void main(String[] args) throws IOException {
