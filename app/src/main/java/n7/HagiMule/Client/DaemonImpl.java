@@ -106,7 +106,6 @@ public class DaemonImpl extends Thread implements Daemon {
                                 while (true) {
                                     Thread.sleep(ttl / 2);
                                     float load = ((float) NBACTIV) / NBPEER;
-                                    System.out.println("TTL load " + load);
                                     index.peerKeepAlive(new PeerImpl(null, port, load));
                                 }
                             } catch (Exception e) {

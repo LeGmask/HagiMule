@@ -11,4 +11,8 @@ public interface File {
     public byte[] readFragment(int fragment) throws IOException;
 
     public void writeFragment(int fragment, byte[] data, int length) throws IOException;
+
+    public void close() throws IOException;
+
+    public String getStrPath();
 }

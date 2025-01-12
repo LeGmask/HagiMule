@@ -23,6 +23,7 @@ import n7.HagiMule.Shared.File;
 import n7.HagiMule.Shared.FileImpl;
 import n7.HagiMule.Shared.FileInfo;
 import n7.HagiMule.Shared.FileInfoImpl;
+import n7.HagiMule.Shared.FileUtils;
 import n7.HagiMule.Shared.Peer;
 
 public class DownloadImpl implements Download, Runnable {
@@ -210,6 +211,7 @@ public class DownloadImpl implements Download, Runnable {
             }
 
             if (queue.isEmpty()) {
+                fichier.close();
                 System.out.println(
                         "=== Download of "
                                 + fichier.getFileInfo().getNom()
@@ -218,7 +220,16 @@ public class DownloadImpl implements Download, Runnable {
                                 + "s, at a speed of "
                                 + (fichier.getFileInfo().getTaille() / (lastFragReceived - start))
                                 + "B/s ===");
-                status = DownloadStatus.FINISHED;
+                // all fragments downloaded
+                String dlHash = FileUtils.md5Hash(fichier.getStrPath());
+                if(dlHash.equals(fichier.getFileInfo().getHash())) {
+                    System.out.println("Integrity Check OK");
+                    status = DownloadStatus.FINISHED;
+                } else {
+                    System.out.println("Downloader : Téléchargement échoué (intégritée)");
+                    status = DownloadStatus.FAILED;
+                }
+
             } else {
                 System.out.println("Downloader : Téléchargement échoué (morceaux manquants)");
                 status = DownloadStatus.FAILED;
@@ -226,6 +237,8 @@ public class DownloadImpl implements Download, Runnable {
 
         } catch (RemoteException e) {
             System.out.println("Diary failed");
+            e.printStackTrace();
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }

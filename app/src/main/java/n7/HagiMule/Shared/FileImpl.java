@@ -68,4 +68,15 @@ public class FileImpl implements File {
         this.channel.write(buff, start);
         this.mutex.unlock();
     }
+
+    @Override
+    public void close() throws IOException {
+        // closing uderlying nio channel
+       this.channel.close();
+    }
+
+    @Override
+    public String getStrPath() {
+        return this.filePath.toString();
+    }
 }
