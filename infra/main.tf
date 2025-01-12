@@ -48,10 +48,10 @@ resource "aws_instance" "client" {
 
     mkdir -p /media
     dd if=/dev/zero of=/media/fichier_1go.bin bs=1M count=1024
-    dd if=/dev/zero of=/media/fichier_3go.bin bs=1M count=3072
-    # dd if=/dev/zero of=/media/fichier_5go.bin bs=1M count=5120
+    # dd if=/dev/zero of=/media/fichier_3go.bin bs=1M count=3072
+    wget -O /media/presentation.webm https://github.com/associationlicencebiomad/website/raw/master/data/presentation.webm 
 
-    sudo docker run --network host -d -it --name client --volume /media:/media ghcr.io/legmask/hagimule/client:latest ${aws_instance.diary.public_ip} 4000 --no-tui --files /media/fichier_1go.bin,/media/fichier_3go.bin
+    sudo docker run --network host -d -it --name client --volume /media:/media ghcr.io/legmask/hagimule/client:latest ${aws_instance.diary.public_ip} 4000 --no-tui --files /media/fichier_1go.bin,/media/presentation.webm
   EOF
 
   tags = {
