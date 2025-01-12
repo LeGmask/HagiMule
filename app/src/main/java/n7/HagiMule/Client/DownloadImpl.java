@@ -28,7 +28,7 @@ import n7.HagiMule.Shared.Peer;
 
 public class DownloadImpl implements Download, Runnable {
 
-    public static final int NBSOURCES = 10; // at most use 5 sources simultaneously
+    public static final int NBSOURCES = 10; // at most use 10 sources simultaneously
     public static final int POLLRATE = 10000; // poll index for new peers every 10 seconds
 
     private Diary diary;

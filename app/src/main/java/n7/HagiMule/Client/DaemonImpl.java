@@ -25,7 +25,7 @@ import n7.HagiMule.Shared.PeerImpl;
 
 public class DaemonImpl extends Thread implements Daemon {
 
-    public static final int NBPEER = 1;
+    public static final int NBPEER = 10;
     private int NBACTIV = 0;
     public static final int DEFAULT_FRAGSIZE = 40000000;
 
