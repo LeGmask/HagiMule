@@ -5,7 +5,9 @@ import com.googlecode.lanterna.gui2.BasicWindow;
 import com.googlecode.lanterna.gui2.Button;
 import com.googlecode.lanterna.gui2.Component;
 import com.googlecode.lanterna.gui2.dialogs.FileDialogBuilder;
+import com.googlecode.lanterna.gui2.dialogs.DirectoryDialogBuilder;
 import java.io.File;
+import java.nio.file.Paths;
 import java.rmi.RemoteException;
 import n7.HagiMule.Client.Tui.Tui;
 import n7.HagiMule.Client.Tui.TuiComponent;
@@ -45,7 +47,7 @@ public class Download implements TuiComponent {
                         });
             }
             actionListBox.addItem(
-                    "cancel",
+                    "Cancel",
                     new Runnable() {
                         @Override
                         public void run() {
@@ -64,23 +66,25 @@ public class Download implements TuiComponent {
     private void downloadFile(FileInfo fileInfo) {
         //
         File input =
-                new FileDialogBuilder()
-                        .setTitle("Save File")
-                        .setSelectedFile(new File(fileInfo.getNom()))
-                        .setDescription("Choose a directory")
-                        .setActionLabel("Save")
-                        .build()
-                        .showDialog(tui.textGUI);
+            new DirectoryDialogBuilder()
+            .setTitle("Select directory")
+            .setDescription("Choose a directory")
+            .setActionLabel("Select")
+            .build()
+            .showDialog(tui.textGUI);
+        
+        if (input != null) {
+            int id = tui.downloader.submit(fileInfo, Paths.get(input.getPath(), fileInfo.getNom()).toString());
+            tui.downloads.addDownload(id);
+            // close the window
+            // downloads.addComponent(
+            // new Label(fileInfo.getNom()));
+            // ProgressBar pB = new ProgressBar();
+            // pB.setPreferredWidth(50);
+            // downloads.addComponent(pB);
+    
+            // textGUI.removeWindow(window);
+        }
 
-        int id = tui.downloader.submit(fileInfo, input.getPath());
-        tui.downloads.addDownload(id);
-        // close the window
-        // downloads.addComponent(
-        // new Label(fileInfo.getNom()));
-        // ProgressBar pB = new ProgressBar();
-        // pB.setPreferredWidth(50);
-        // downloads.addComponent(pB);
-
-        // textGUI.removeWindow(window);
     }
 }
