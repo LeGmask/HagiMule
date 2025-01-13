@@ -58,6 +58,7 @@ tasks.named<Jar>("jar") {
             "Main-Class" to "n7.HagiMule.Client.Client",
         )
     }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
 configure<com.diffplug.gradle.spotless.SpotlessExtension> {
